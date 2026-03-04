@@ -1,7 +1,7 @@
+/* =====*** IMPORTS ***===== */
 import mongoose from 'mongoose'
 
-// ======*USER SCHEMA*======
-
+/* ================================* USER SCHEMA *=============================== */
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -42,4 +42,5 @@ const userSchema = new mongoose.Schema(
   }
 )
 
+/* =====*** EXPORT MODEL ***===== */
 export default mongoose.model('User', userSchema)

@@ -1,28 +1,25 @@
-// =====*** IMPORTS ***=====
+/* =====*** IMPORTS ***===== */
 import express from 'express'
-import authRoutes from './routes/auth.routes.js'
+import dotenv from 'dotenv'
 import productRoutes from './routes/product.routes.js'
+import authRoutes from './routes/auth.routes.js'
+import errorHandler from './middleware/error.middleware.js'
 
-// =====*** INITIALIZE EXPRESS APP ***=====
+dotenv.config()
 const app = express()
 
-// =====*** GLOBAL MIDDLEWARES ***=====
+/* =====*** GLOBAL MIDDLEWARES ***===== */
 app.use(express.json())
 
-// ============================* ROUTES *=============================
-
-// =====*** Auth Routes ***=====
+/* =====*** ROUTES ***===== */
 app.use('/api/auth', authRoutes)
-
-// =====*** Product Routes ***=====
 app.use('/api/products', productRoutes)
-
-// =====*** Health Check Route ***=====
+/* =====*** HEALTH CHECK ***===== */
 app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'API is Running 👍',
-  })
+  res.json({ success: true, message: 'API is Running 👍' })
 })
+
+/* =====*** ERROR HANDLER ***===== */
+app.use(errorHandler)
 
 export default app

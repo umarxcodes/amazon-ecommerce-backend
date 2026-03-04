@@ -1,10 +1,10 @@
 /* =====*** IMPORTS ***===== */
 import asyncHandler from 'express-async-handler'
 import User from '../models/user.model.js'
-import { comparePassword, hashPassword } from '../utils/hash.util.js'
+import { hashPassword, comparePassword } from '../utils/hash.util.js'
 import { generateAccessToken } from '../utils/jwt.util.js'
 
-/* ================================* REGISTER USER *============================ */
+/* ================================* REGISTER USER *=============================== */
 const register = asyncHandler(async (req, res) => {
   /* =====*** EXTRACT DATA FROM BODY ***===== */
   const { name, email, password, role } = req.body
@@ -14,7 +14,6 @@ const register = asyncHandler(async (req, res) => {
     res.status(400)
     throw new Error('All fields are required')
   }
-
 
   /* =====*** CHECK IF USER ALREADY EXISTS ***===== */
   const existingUser = await User.findOne({ email })
@@ -27,16 +26,25 @@ const register = asyncHandler(async (req, res) => {
   const hashedPassword = await hashPassword(password)
 
   /* =====*** ROLE LOGIC ***=====
-     - Default role is USER
-     - Only logged-in ADMIN can assign ADMIN role
+       - Default role is USER
+       - First user ever → auto ADMIN (optional for dev)
+       - Only logged-in ADMIN can assign ADMIN role
   */
   let userRole = 'USER'
+  const totalUsers = await User.countDocuments()
 
-  if (req.user && req.user.role === 'ADMIN') {
-    userRole = role === 'ADMIN' ? 'ADMIN' : 'USER'
+  if (totalUsers === 0) {
+    // First ever user → make ADMIN
+    userRole = 'ADMIN'
+  } else if (req.user && req.user.role === 'ADMIN') {
+    // Logged-in admin can assign ADMIN
+    if (role && role === 'ADMIN') {
+      userRole = 'ADMIN'
+    }
   }
+  // Otherwise, ignore any role sent → force USER
 
-  /* =====*** CREATE NEW USER ***===== */
+  /* =====*** CREATE NEW USER IN DATABASE ***===== */
   const user = await User.create({
     name,
     email,
@@ -47,7 +55,7 @@ const register = asyncHandler(async (req, res) => {
   /* =====*** SUCCESS RESPONSE ***===== */
   res.status(201).json({
     success: true,
-    message: 'User created successfully',
+    message: 'User registered successfully',
     data: {
       id: user._id,
       name: user.name,
@@ -69,7 +77,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   /* =====*** FIND USER & INCLUDE PASSWORD FIELD ***===== */
-  const user = await User.findOne({ email }).select('+password')
+  const user = await User.findOne({ email, isActive: true }).select('+password')
   if (!user) {
     res.status(401)
     throw new Error('Invalid credentials')
@@ -105,7 +113,4 @@ const login = asyncHandler(async (req, res) => {
 })
 
 /* =====*** EXPORT CONTROLLER ***===== */
-export default {
-  register,
-  login,
-}
+export default { register, login }

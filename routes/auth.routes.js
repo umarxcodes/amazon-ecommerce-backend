@@ -1,17 +1,21 @@
-// =====*** IMPORTS ***=====
-import { Router } from 'express'
+/* =====*** IMPORTS ***===== */
+import express from 'express'
 import authController from '../controllers/auth.controller.js'
-import validate from '../middleware/validate.middleware.js'
-import { registerSchema, loginSchema } from '../validations/auth.validation.js'
+import authMiddleware from '../middleware/auth.middleware.js'
+import adminMiddleware from '../middleware/admin.middleware.js'
 
-const router = Router()
+const router = express.Router()
 
-// ================================* AUTH ROUTES *=============================
+/* ================================* PUBLIC ROUTES *=============================== */
+router.post('/register', authController.register)
+router.post('/login', authController.login)
 
-// =====*** Register User Route ***=====
-router.post('/register', validate(registerSchema), authController.register)
-
-// =====*** Login User Route ***=====
-router.post('/login', validate(loginSchema), authController.login)
+/* ================================* ADMIN CREATE USER *=============================== */
+router.post(
+  '/admin-create',
+  authMiddleware,
+  adminMiddleware,
+  authController.register
+)
 
 export default router
