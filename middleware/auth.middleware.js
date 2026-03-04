@@ -1,26 +1,26 @@
+/* =====*** IMPORTS ***===== */
 import jwt from 'jsonwebtoken'
 import asyncHandler from 'express-async-handler'
 import User from '../models/user.model.js'
 
+/* =====*** AUTH MIDDLEWARE ***===== */
 const authMiddleware = asyncHandler(async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1]
-  if (!token) {
+  const authHeader = req.headers.authorization
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401)
     throw new Error('Not authorized, token missing')
   }
 
+  const token = authHeader.split(' ')[1]
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await User.findById(decoded.id)
-    if (!user) {
-      res.status(401)
-      throw new Error('User not found')
-    }
-    req.user = user
+    req.user = await User.findById(decoded.userId)
     next()
-  } catch (err) {
+  } catch (error) {
     res.status(401)
-    throw new Error('Token is invalid')
+    throw new Error('Not authorized, token invalid')
   }
 })
 

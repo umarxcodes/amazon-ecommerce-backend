@@ -22,8 +22,8 @@ router.get('/:id', productController.getProductById)
 // =====*** Create Product (Protected) ***=====
 router.post(
   '/',
-  adminMiddleware,
   authMiddleware,
+  adminMiddleware,
   validate(productValidationSchema),
   productController.createProduct
 )

@@ -4,9 +4,9 @@ import mongoose from 'mongoose'
 /* ======*PRODUCT SCHEMA*====== */
 const productSchema = new mongoose.Schema(
   {
-    title: {
+    name: {
       type: String,
-      required: [true, 'Product title is required'],
+      required: [true, 'Product name is required'],
       trim: true,
     },
 

@@ -21,22 +21,27 @@ const register = asyncHandler(async (req, res) => {
     throw new Error('User already exists')
   }
 
-  /* =====*** HASH PASSWORD BEFORE SAVING ***===== */
+  /* =====*** HASH PASSWORD ***===== */
   const hashedPassword = await hashPassword(password)
 
   /* =====*** ROLE LOGIC ***=====
-     - Default role is USER
-     - First user ever → auto ADMIN
-     - Only logged-in ADMIN can assign ADMIN
-  */ x
+       - Default role is USER
+       - First user ever → auto ADMIN (optional)
+       - Only logged-in ADMIN can assign ADMIN
+  */
   let userRole = 'USER'
   const totalUsers = await User.countDocuments()
 
   if (totalUsers === 0) {
+    // First ever user → make ADMIN (optional, for dev)
     userRole = 'ADMIN'
   } else if (req.user && req.user.role === 'ADMIN') {
-    userRole = role === 'ADMIN' ? 'ADMIN' : 'USER'
+    // If admin is logged in, allow assigning ADMIN role
+    if (role && role === 'ADMIN') {
+      userRole = 'ADMIN'
+    }
   }
+  // Otherwise, ignore any role sent in request → force USER
 
   /* =====*** CREATE USER IN DB ***===== */
   const user = await User.create({
@@ -100,8 +105,4 @@ const login = asyncHandler(async (req, res) => {
   })
 })
 
-/* =====*** EXPORT CONTROLLER ***===== */
-export default {
-  register,
-  login,
-}
+export default { register, login }
