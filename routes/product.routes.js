@@ -4,8 +4,8 @@ import { Router } from 'express'
 import validate from '../middleware/validate.middleware.js'
 
 import authMiddleware from '../middleware/auth.middleware.js'
-import { productValidationSchema } from '../validations/productValidation.js'
-import productController from '../controllers/productController.js'
+import { productValidationSchema } from '../validations/product.validation.js'
+import productController from '../controllers/product.controller.js'
 import adminMiddleware from '../middleware/admin.middleware.js'
 
 const router = Router()

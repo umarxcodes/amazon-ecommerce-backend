@@ -1,7 +1,7 @@
 /* ======*IMPORTS*====== */
-import Product from '../models/Product.js'
+import Product from '../models/product.model.js'
 import asyncHandler from 'express-async-handler'
-import { productValidationSchema } from '../validations/productValidation.js'
+import { productValidationSchema } from '../validations/product.validation.js'
 
 /* ======*CREATE PRODUCT (ADMIN)*====== */
 const createProduct = asyncHandler(async (req, res) => {
