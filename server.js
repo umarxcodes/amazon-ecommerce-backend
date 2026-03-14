@@ -10,7 +10,6 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // ======*connect DB*======
-
 connectDB()
 
 app.listen(PORT, () => {
