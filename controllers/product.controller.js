@@ -15,13 +15,67 @@ const createProduct = asyncHandler(async (req, res) => {
   })
 })
 
-/* ======*GET ALL PRODUCTS*====== */
+/* ======*GET ALL PRODUCTS (SEARCH + FILTER + PAGINATION)*====== */
 const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find()
+  const {
+    search,
+    category,
+    minPrice,
+    maxPrice,
+    page = 1,
+    limit = 10,
+    sort,
+  } = req.query
 
+  /* ======* BUILD QUERY OBJECT *====== */
+  let query = {}
+
+  //  SEARCH (by name)
+  if (search) {
+    query.name = { $regex: search, $options: 'i' }
+  }
+
+  //  CATEGORY FILTER
+  if (category) {
+    query.category = category
+  }
+
+  //  PRICE FILTER
+  if (minPrice || maxPrice) {
+    query.price = {}
+
+    if (minPrice) query.price.$gte = Number(minPrice)
+    if (maxPrice) query.price.$lte = Number(maxPrice)
+  }
+
+  /* ======* SORTING *====== */
+  let sortOption = {}
+  if (sort) {
+    // Example: price or -price
+    sortOption[sort.replace('-', '')] = sort.startsWith('-') ? -1 : 1
+  } else {
+    sortOption = { createdAt: -1 } // default latest
+  }
+
+  /* ======* PAGINATION *====== */
+  const pageNumber = Number(page)
+  const limitNumber = Number(limit)
+  const skip = (pageNumber - 1) * limitNumber
+
+  /* ======* EXECUTE QUERY *====== */
+  const products = await Product.find(query)
+    .sort(sortOption)
+    .skip(skip)
+    .limit(limitNumber)
+
+  const totalProducts = await Product.countDocuments(query)
+
+  /* ======* RESPONSE *====== */
   res.status(200).json({
     success: true,
-    count: products.length,
+    total: totalProducts,
+    page: pageNumber,
+    pages: Math.ceil(totalProducts / limitNumber),
     products,
   })
 })
