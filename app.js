@@ -5,6 +5,7 @@ import productRoutes from './routes/product.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import errorHandler from './middleware/error.middleware.js'
+import cartRoutes from './routes/cart.routes.js'
 
 dotenv.config()
 const app = express()
@@ -16,7 +17,7 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/admin', adminRoutes)
-
+app.use('/api/cart', cartRoutes)
 
 /* =====*** HEALTH CHECK ***===== */
 app.get('/', (req, res) => {

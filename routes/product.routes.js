@@ -1,25 +1,24 @@
-// =====*** IMPORTS ***=====
+/* =====*** IMPORTS ***===== */
 import { Router } from 'express'
-
-import validate from '../middleware/validate.middleware.js'
-
-import authMiddleware from '../middleware/auth.middleware.js'
-import { productValidationSchema } from '../validations/product.validation.js'
 import productController from '../controllers/product.controller.js'
+import authMiddleware from '../middleware/auth.middleware.js'
 import adminMiddleware from '../middleware/admin.middleware.js'
+import validate from '../middleware/validate.middleware.js'
+import { productValidationSchema } from '../validations/product.validation.js'
 
 const router = Router()
 
-// ============================* PRODUCT ROUTES *=============================
+/* ============================* PUBLIC ROUTES *============================= */
 
 // =====*** Get All Products ***=====
-
 router.get('/', productController.getProducts)
 
 // =====*** Get Single Product ***=====
 router.get('/:id', productController.getProductById)
 
-// =====*** Create Product (Protected) ***=====
+/* ============================* ADMIN ROUTES *============================= */
+
+// =====*** Create Product ***=====
 router.post(
   '/',
   authMiddleware,
@@ -28,16 +27,16 @@ router.post(
   productController.createProduct
 )
 
-// =====*** Update Product (Protected) ***=====
+// =====*** Update Product ***=====
 router.put(
   '/:id',
   authMiddleware,
   adminMiddleware,
-  validate(productValidationSchema),
+  validate(productValidationSchema), // (you can later create update schema)
   productController.updateProduct
 )
 
-// =====*** Delete Product (Protected) ***=====
+// =====*** Delete Product ***=====
 router.delete(
   '/:id',
   authMiddleware,

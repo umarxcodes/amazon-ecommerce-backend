@@ -5,9 +5,10 @@ import { hashPassword, comparePassword } from '../utils/hash.util.js'
 import { generateAccessToken } from '../utils/jwt.util.js'
 
 /* ================================* REGISTER USER *=============================== */
+
 const register = asyncHandler(async (req, res) => {
   /* =====*** EXTRACT DATA FROM BODY ***===== */
-  const { name, email, password, role } = req.body
+  const { name, email, password } = req.body
 
   /* =====*** VALIDATION: REQUIRED FIELDS ***===== */
   if (!name || !email || !password) {
@@ -25,31 +26,15 @@ const register = asyncHandler(async (req, res) => {
   /* =====*** HASH PASSWORD BEFORE SAVING ***===== */
   const hashedPassword = await hashPassword(password)
 
-  /* =====*** ROLE LOGIC ***=====
-       - Default role is USER
-       - First user ever → auto ADMIN (optional for dev)
-       - Only logged-in ADMIN can assign ADMIN role
-  */
-  let userRole = 'USER'
   const totalUsers = await User.countDocuments()
+  const role = totalUsers === 0 ? 'ADMIN' : 'USER'
 
-  if (totalUsers === 0) {
-    // First ever user → make ADMIN
-    userRole = 'ADMIN'
-  } else if (req.user && req.user.role === 'ADMIN') {
-    // Logged-in admin can assign ADMIN
-    if (role && role === 'ADMIN') {
-      userRole = 'ADMIN'
-    }
-  }
-  // Otherwise, ignore any role sent → force USER
-
-  /* =====*** CREATE NEW USER IN DATABASE ***===== */
+  /* =====*** CREATE USER IN DATABASE ***===== */
   const user = await User.create({
     name,
     email,
     password: hashedPassword,
-    role: userRole,
+    role,
   })
 
   /* =====*** SUCCESS RESPONSE ***===== */
@@ -66,31 +51,32 @@ const register = asyncHandler(async (req, res) => {
 })
 
 /* ================================* LOGIN USER *=============================== */
+
 const login = asyncHandler(async (req, res) => {
   /* =====*** EXTRACT DATA FROM BODY ***===== */
   const { email, password } = req.body
 
-  /* =====*** VALIDATION: REQUIRED FIELDS ***===== */
+  /* =====*** VALIDATION ***===== */
   if (!email || !password) {
     res.status(400)
     throw new Error('Email and password are required')
   }
 
-  /* =====*** FIND USER & INCLUDE PASSWORD FIELD ***===== */
+  /* =====*** FIND USER & INCLUDE PASSWORD ***===== */
   const user = await User.findOne({ email, isActive: true }).select('+password')
   if (!user) {
     res.status(401)
     throw new Error('Invalid credentials')
   }
 
-  /* =====*** COMPARE PASSWORDS ***===== */
+  /* =====*** COMPARE PASSWORD ***===== */
   const isMatch = await comparePassword(password, user.password)
   if (!isMatch) {
     res.status(401)
     throw new Error('Invalid credentials')
   }
 
-  /* =====*** GENERATE ACCESS TOKEN (JWT) ***===== */
+  /* =====*** GENERATE JWT TOKEN ***===== */
   const accessToken = generateAccessToken({
     userId: user._id,
     role: user.role,
@@ -113,4 +99,7 @@ const login = asyncHandler(async (req, res) => {
 })
 
 /* =====*** EXPORT CONTROLLER ***===== */
-export default { register, login }
+export default {
+  register,
+  login,
+}
