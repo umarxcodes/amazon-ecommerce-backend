@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler'
+import mongoose from 'mongoose'
 import User from '../models/user.model.js'
 import { hashPassword } from '../utils/hash.util.js'
 
@@ -53,9 +54,19 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const changeUserRole = asyncHandler(async (req, res) => {
   const { role } = req.body
 
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    res.status(400)
+    throw new Error('Invalid user ID')
+  }
+
   if (!role || !['USER', 'ADMIN'].includes(role)) {
     res.status(400)
     throw new Error('Invalid role')
+  }
+
+  if (req.user.userId === req.params.id) {
+    res.status(400)
+    throw new Error('You cannot change your own role')
   }
 
   const user = await User.findByIdAndUpdate(
@@ -78,16 +89,25 @@ const changeUserRole = asyncHandler(async (req, res) => {
 
 /* ================= DEACTIVATE USER ================= */
 const deactivateUser = asyncHandler(async (req, res) => {
-  const user = await User.findByIdAndUpdate(
-    req.params.id,
-    { isActive: false },
-    { new: true }
-  ).select('-password')
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    res.status(400)
+    throw new Error('Invalid user ID')
+  }
+
+  const user = await User.findById(req.params.id)
 
   if (!user) {
     res.status(404)
     throw new Error('User not found')
   }
+
+  if (!user.isActive) {
+    res.status(400)
+    throw new Error('User already inactive')
+  }
+
+  user.isActive = false
+  await user.save()
 
   res.status(200).json({
     success: true,

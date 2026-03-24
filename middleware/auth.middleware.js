@@ -1,10 +1,11 @@
 /* =====*** IMPORTS ***===== */
 import jwt from 'jsonwebtoken'
 import asyncHandler from 'express-async-handler'
-import User from '../models/user.model.js'
 
-/* =====*** AUTH MIDDLEWARE ***===== */
+/* ================================* AUTH MIDDLEWARE *=============================== */
+
 const authMiddleware = asyncHandler(async (req, res, next) => {
+  /* =====*** GET TOKEN FROM HEADER ***===== */
   const authHeader = req.headers.authorization
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,8 +16,15 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
   const token = authHeader.split(' ')[1]
 
   try {
+    /* =====*** VERIFY TOKEN ***===== */
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = await User.findById(decoded.userId)
+
+    /* =====*** ATTACH USER DATA TO REQUEST ***===== */
+    req.user = {
+      userId: decoded.userId,
+      role: decoded.role,
+    }
+
     next()
   } catch (error) {
     res.status(401)
