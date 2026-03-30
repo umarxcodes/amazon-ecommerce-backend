@@ -5,6 +5,7 @@ import authMiddleware from '../middleware/auth.middleware.js'
 import adminMiddleware from '../middleware/admin.middleware.js'
 import validate from '../middleware/validate.middleware.js'
 import { productValidationSchema } from '../validations/product.validation.js'
+import upload from '../middleware/upload.middleware.js'
 
 const router = Router()
 
@@ -21,6 +22,7 @@ router.get('/:id', productController.getProductById)
 // =====*** Create Product ***=====
 router.post(
   '/',
+  upload.array('image', 5),
   authMiddleware,
   adminMiddleware,
   validate(productValidationSchema),

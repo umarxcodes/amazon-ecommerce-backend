@@ -5,7 +5,14 @@ import mongoose from 'mongoose'
 
 /* ================================* CREATE PRODUCT (ADMIN) *=============================== */
 const createProduct = asyncHandler(async (req, res) => {
-  const product = await Product.create(req.body)
+  /* =====*** EXTRACT CLOUDINARY IMAGE URLs ***===== */
+  const images = req.files?.map((file) => file.path) || []
+
+  /* =====*** CREATE PRODUCT ***===== */
+  const product = await Product.create({
+    ...req.body,
+    images,
+  })
 
   res.status(201).json({
     success: true,
@@ -13,7 +20,7 @@ const createProduct = asyncHandler(async (req, res) => {
   })
 })
 
-/* ================================* GET ALL PRODUCTS (SEARCH + FILTER + PAGINATION) *=============================== */
+/* ================================* GET ALL PRODUCTS *=============================== */
 const getProducts = asyncHandler(async (req, res) => {
   const {
     search,
@@ -26,10 +33,9 @@ const getProducts = asyncHandler(async (req, res) => {
     limit = 10,
   } = req.query
 
-  /* =====*** BASE QUERY ***===== */
   let query = {}
 
-  /* =====*** SEARCH (MULTI-FIELD) ***===== */
+  /* ===== SEARCH ===== */
   if (search) {
     query.$or = [
       { name: { $regex: search.trim(), $options: 'i' } },
@@ -37,24 +43,24 @@ const getProducts = asyncHandler(async (req, res) => {
     ]
   }
 
-  /* =====*** CATEGORY FILTER ***===== */
+  /* ===== CATEGORY ===== */
   if (category) {
     query.category = category
   }
 
-  /* =====*** PRICE FILTER ***===== */
+  /* ===== PRICE ===== */
   if (minPrice || maxPrice) {
     query.price = {}
     if (minPrice) query.price.$gte = Number(minPrice)
     if (maxPrice) query.price.$lte = Number(maxPrice)
   }
 
-  /* =====*** RATING FILTER ***===== */
+  /* ===== RATING ===== */
   if (rating) {
     query.ratings = { $gte: Number(rating) }
   }
 
-  /* =====*** SORTING ***===== */
+  /* ===== SORT ===== */
   const allowedSortFields = ['price', 'createdAt', 'ratings']
   let sortOption = { createdAt: -1 }
 
@@ -67,18 +73,16 @@ const getProducts = asyncHandler(async (req, res) => {
     }
   }
 
-  /* =====*** PAGINATION ***===== */
+  /* ===== PAGINATION ===== */
   const pageNumber = Math.max(1, Number(page))
   const limitNumber = Math.max(1, Number(limit))
   const skip = (pageNumber - 1) * limitNumber
 
-  /* =====*** DATABASE QUERY (PARALLEL) ***===== */
   const [products, total] = await Promise.all([
     Product.find(query).sort(sortOption).skip(skip).limit(limitNumber),
     Product.countDocuments(query),
   ])
 
-  /* =====*** RESPONSE ***===== */
   res.status(200).json({
     success: true,
     total,
@@ -91,7 +95,6 @@ const getProducts = asyncHandler(async (req, res) => {
 
 /* ================================* GET SINGLE PRODUCT *=============================== */
 const getProductById = asyncHandler(async (req, res) => {
-  /* =====*** VALIDATE OBJECT ID ***===== */
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     res.status(400)
     throw new Error('Invalid product ID')
@@ -119,15 +122,16 @@ const updateProduct = asyncHandler(async (req, res) => {
     throw new Error('Product not found')
   }
 
-  /* =====*** ALLOWED FIELDS (SECURITY) ***===== */
-  const allowedUpdates = [
-    'name',
-    'description',
-    'price',
-    'category',
-    'stock',
-    'images',
-  ]
+  /* ===== HANDLE NEW IMAGES (OPTIONAL) ===== */
+  if (req.files && req.files.length > 0) {
+    const newImages = req.files.map((file) => file.path)
+
+    // Replace old images OR append (your choice)
+    product.images = newImages
+  }
+
+  /* ===== ALLOWED FIELDS ===== */
+  const allowedUpdates = ['name', 'description', 'price', 'category', 'stock']
 
   allowedUpdates.forEach((field) => {
     if (req.body[field] !== undefined) {
@@ -151,6 +155,9 @@ const deleteProduct = asyncHandler(async (req, res) => {
     res.status(404)
     throw new Error('Product not found')
   }
+
+  /* ===== OPTIONAL: DELETE IMAGES FROM CLOUDINARY ===== */
+  // (Advanced: we can implement later)
 
   await product.deleteOne()
 
