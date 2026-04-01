@@ -13,6 +13,14 @@ const calculateTotal = (cart) => {
 /* ================= HELPER: CACHE KEY ================= */
 const getCartCacheKey = (userId) => `cart:${userId}`
 
+/* ================= HELPER: NORMALIZE QUANTITY ================= */
+const normalizeQuantity = (quantity) => Number.parseInt(quantity, 10)
+
+/* ================= HELPER: GET POPULATED CART ================= */
+const getPopulatedCart = async (userId) => {
+  return Cart.findOne({ user: userId }).populate('items.product').lean()
+}
+
 /* ================= ADD TO CART ================= */
 const addToCart = asyncHandler(async (req, res) => {
   const { productId, quantity } = req.body
@@ -23,7 +31,11 @@ const addToCart = asyncHandler(async (req, res) => {
     throw new Error('Invalid product ID')
   }
 
-  const qty = Math.max(1, Number(quantity) || 1)
+  const qty = quantity === undefined ? 1 : normalizeQuantity(quantity)
+  if (!Number.isInteger(qty) || qty < 1) {
+    res.status(400)
+    throw new Error('Invalid quantity')
+  }
 
   /* ===== CHECK PRODUCT EXISTS ===== */
   const product = await Product.findById(productId).lean()
@@ -33,11 +45,11 @@ const addToCart = asyncHandler(async (req, res) => {
   }
 
   /* ===== FIND OR CREATE CART ===== */
-  let cart = await Cart.findOne({ user: req.user._id })
+  let cart = await Cart.findOne({ user: req.user.userId })
 
   if (!cart) {
     cart = new Cart({
-      user: req.user._id,
+      user: req.user.userId,
       items: [],
     })
   }
@@ -46,10 +58,20 @@ const addToCart = asyncHandler(async (req, res) => {
   const itemIndex = cart.items.findIndex(
     (item) => item.product.toString() === productId
   )
-
   if (itemIndex > -1) {
-    cart.items[itemIndex].quantity += qty
+    const updatedQuantity = cart.items[itemIndex].quantity + qty
+    if (updatedQuantity > product.stock) {
+      res.status(400)
+      throw new Error(`Only ${product.stock} item(s) available in stock`)
+    }
+
+    cart.items[itemIndex].quantity = updatedQuantity
   } else {
+    if (qty > product.stock) {
+      res.status(400)
+      throw new Error(`Only ${product.stock} item(s) available in stock`)
+    }
+
     cart.items.push({
       product: productId,
       quantity: qty,
@@ -63,18 +85,20 @@ const addToCart = asyncHandler(async (req, res) => {
   await cart.save()
 
   /* ===== INVALIDATE CACHE ===== */
-  await redis.del(getCartCacheKey(req.user._id))
+  await redis.del(getCartCacheKey(req.user.userId))
+
+  const populatedCart = await getPopulatedCart(req.user.userId)
 
   res.status(200).json({
     success: true,
     message: 'Item added to cart',
-    cart,
+    cart: populatedCart,
   })
 })
 
 /* ================= GET CART (WITH REDIS CACHE) ================= */
 const getCart = asyncHandler(async (req, res) => {
-  const cacheKey = getCartCacheKey(req.user._id)
+  const cacheKey = getCartCacheKey(req.user.userId)
 
   /* ===== CHECK CACHE ===== */
   const cachedCart = await redis.get(cacheKey)
@@ -90,7 +114,7 @@ const getCart = asyncHandler(async (req, res) => {
   console.log(' CART CACHE MISS')
 
   /* ===== FETCH FROM DATABASE ===== */
-  const cart = await Cart.findOne({ user: req.user._id })
+  const cart = await Cart.findOne({ user: req.user.userId })
     .populate('items.product')
     .lean()
 
@@ -126,12 +150,13 @@ const updateCartItem = asyncHandler(async (req, res) => {
     throw new Error('Invalid product ID')
   }
 
-  if (!quantity || quantity < 1) {
+  const qty = normalizeQuantity(quantity)
+  if (!Number.isInteger(qty) || qty < 1) {
     res.status(400)
     throw new Error('Invalid quantity')
   }
 
-  const cart = await Cart.findOne({ user: req.user._id })
+  const cart = await Cart.findOne({ user: req.user.userId })
 
   if (!cart) {
     res.status(404)
@@ -145,20 +170,33 @@ const updateCartItem = asyncHandler(async (req, res) => {
     throw new Error('Item not found in cart')
   }
 
+  const product = await Product.findById(productId).lean()
+  if (!product) {
+    res.status(404)
+    throw new Error('Product not found')
+  }
+
+  if (qty > product.stock) {
+    res.status(400)
+    throw new Error(`Only ${product.stock} item(s) available in stock`)
+  }
+
   /* ===== UPDATE QUANTITY ===== */
-  item.quantity = quantity
+  item.quantity = qty
 
   cart.totalPrice = calculateTotal(cart)
 
   await cart.save()
 
   /* ===== INVALIDATE CACHE ===== */
-  await redis.del(getCartCacheKey(req.user._id))
+  await redis.del(getCartCacheKey(req.user.userId))
+
+  const populatedCart = await getPopulatedCart(req.user.userId)
 
   res.status(200).json({
     success: true,
     message: 'Cart updated',
-    cart,
+    cart: populatedCart,
   })
 })
 
@@ -171,7 +209,7 @@ const removeFromCart = asyncHandler(async (req, res) => {
     throw new Error('Invalid product ID')
   }
 
-  const cart = await Cart.findOne({ user: req.user._id })
+  const cart = await Cart.findOne({ user: req.user.userId })
 
   if (!cart) {
     res.status(404)
@@ -179,27 +217,35 @@ const removeFromCart = asyncHandler(async (req, res) => {
   }
 
   /* ===== REMOVE ITEM ===== */
+  const initialItemsCount = cart.items.length
   cart.items = cart.items.filter(
     (item) => item.product.toString() !== productId
   )
+
+  if (cart.items.length === initialItemsCount) {
+    res.status(404)
+    throw new Error('Item not found in cart')
+  }
 
   cart.totalPrice = calculateTotal(cart)
 
   await cart.save()
 
   /* ===== INVALIDATE CACHE ===== */
-  await redis.del(getCartCacheKey(req.user._id))
+  await redis.del(getCartCacheKey(req.user.userId))
+
+  const populatedCart = await getPopulatedCart(req.user.userId)
 
   res.status(200).json({
     success: true,
     message: 'Item removed from cart',
-    cart,
+    cart: populatedCart,
   })
 })
 
 /* ================= CLEAR CART ================= */
 const clearCart = asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id })
+  const cart = await Cart.findOne({ user: req.user.userId })
 
   if (!cart) {
     res.status(404)
@@ -213,11 +259,12 @@ const clearCart = asyncHandler(async (req, res) => {
   await cart.save()
 
   /* ===== INVALIDATE CACHE ===== */
-  await redis.del(getCartCacheKey(req.user._id))
+  await redis.del(getCartCacheKey(req.user.userId))
 
   res.status(200).json({
     success: true,
     message: 'Cart cleared successfully',
+    cart: { items: [], totalPrice: 0 },
   })
 })
 
