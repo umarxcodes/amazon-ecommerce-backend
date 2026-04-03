@@ -1,11 +1,11 @@
 import asyncHandler from 'express-async-handler'
+import { createAppError } from '../utils/app-error.util.js'
 
 const adminMiddleware = asyncHandler(async (req, res, next) => {
   if (req.user && req.user.role === 'ADMIN') {
     next()
   } else {
-    res.status(403)
-    throw new Error('Admin access only')
+    throw createAppError('Admin access only', 403)
   }
 })
 

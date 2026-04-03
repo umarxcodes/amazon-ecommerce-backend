@@ -20,6 +20,14 @@ export const createOrder = async ({ userId, shippingAddress }) => {
         throw createAppError('Cart is empty', 400)
       }
 
+      const missingProductItem = cart.items.find((item) => !item.product)
+      if (missingProductItem) {
+        throw createAppError(
+          'Cart contains an unavailable product. Remove it and try again.',
+          400
+        )
+      }
+
       const orderItems = cart.items.map((item) => ({
         product: item.product._id,
         name: item.product.name,

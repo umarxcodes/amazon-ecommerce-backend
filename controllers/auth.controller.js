@@ -1,6 +1,10 @@
 /* =====*** IMPORTS ***===== */
 import asyncHandler from 'express-async-handler'
-import { loginUser, registerUser } from '../services/auth.service.js'
+import {
+  createAdminUser,
+  loginUser,
+  registerUser,
+} from '../services/auth.service.js'
 
 /* ================================* REGISTER USER *=============================== */
 
@@ -16,8 +20,14 @@ const login = asyncHandler(async (req, res) => {
   res.status(200).json(response)
 })
 
+const createAdmin = asyncHandler(async (req, res) => {
+  const response = await createAdminUser(req.body)
+  res.status(201).json(response)
+})
+
 /* =====*** EXPORT CONTROLLER ***===== */
 export default {
   register,
   login,
+  createAdmin,
 }

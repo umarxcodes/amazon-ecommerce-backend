@@ -3,9 +3,12 @@ import Product from '../models/product.model.js'
 import {
   clearProductCache,
   getCachedValue,
+  getProductCacheVersion,
   setCachedValue,
 } from './cache.service.js'
 import { createAppError } from '../utils/app-error.util.js'
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const createProduct = async ({ body, files }) => {
   const images = files?.map((file) => file.path) || []
@@ -25,7 +28,8 @@ export const createProduct = async ({ body, files }) => {
 }
 
 export const getProducts = async (queryParams) => {
-  const cacheKey = `products:${JSON.stringify(queryParams)}`
+  const cacheVersion = await getProductCacheVersion()
+  const cacheKey = `products:${cacheVersion}:${JSON.stringify(queryParams)}`
   const cachedData = await getCachedValue(cacheKey)
 
   if (cachedData) {
@@ -46,9 +50,10 @@ export const getProducts = async (queryParams) => {
   const query = {}
 
   if (search) {
+    const safeSearch = escapeRegex(search.trim())
     query.$or = [
-      { name: { $regex: search.trim(), $options: 'i' } },
-      { description: { $regex: search.trim(), $options: 'i' } },
+      { name: { $regex: safeSearch, $options: 'i' } },
+      { description: { $regex: safeSearch, $options: 'i' } },
     ]
   }
 
@@ -81,7 +86,7 @@ export const getProducts = async (queryParams) => {
   }
 
   const [products, total] = await Promise.all([
-    Product.find(query).sort(sortOption).skip(skip).limit(limitNumber),
+    Product.find(query).sort(sortOption).skip(skip).limit(limitNumber).lean(),
     Product.countDocuments(query),
   ])
 
@@ -104,7 +109,7 @@ export const getProductById = async (id) => {
     throw createAppError('Invalid product ID', 400)
   }
 
-  const product = await Product.findById(id)
+  const product = await Product.findById(id).lean()
   if (!product) {
     throw createAppError('Product not found', 404)
   }

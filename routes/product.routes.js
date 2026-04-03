@@ -9,16 +9,20 @@ import {
   updateProductValidationSchema,
 } from '../validations/product.validation.js'
 import upload from '../middleware/upload.middleware.js'
+import {
+  adminRateLimit,
+  publicApiRateLimit,
+} from '../middleware/rate-limit.middleware.js'
 
 const router = Router()
 
 /* ============================* PUBLIC ROUTES *============================= */
 
 // =====*** Get All Products ***=====
-router.get('/', productController.getProducts)
+router.get('/', publicApiRateLimit, productController.getProducts)
 
 // =====*** Get Single Product ***=====
-router.get('/:id', productController.getProductById)
+router.get('/:id', publicApiRateLimit, productController.getProductById)
 
 /* ============================* ADMIN ROUTES *============================= */
 
@@ -27,6 +31,7 @@ router.post(
   '/',
   authMiddleware,
   adminMiddleware,
+  adminRateLimit,
   upload.array('image', 5),
   validate(productValidationSchema),
   productController.createProduct
@@ -37,6 +42,7 @@ router.put(
   '/:id',
   authMiddleware,
   adminMiddleware,
+  adminRateLimit,
   upload.array('image', 5),
   validate(updateProductValidationSchema),
   productController.updateProduct
@@ -47,6 +53,7 @@ router.delete(
   '/:id',
   authMiddleware,
   adminMiddleware,
+  adminRateLimit,
   productController.deleteProduct
 )
 

@@ -63,6 +63,8 @@ const productSchema = new mongoose.Schema(
 
 /* =====*** TEXT INDEX FOR SEARCH OPTIMIZATION ***===== */
 productSchema.index({ name: 'text', description: 'text' })
+productSchema.index({ category: 1, price: 1, createdAt: -1 })
+productSchema.index({ createdAt: -1 })
 
 /* =====*** EXPORT MODEL ***===== */
 export default mongoose.model('Product', productSchema)

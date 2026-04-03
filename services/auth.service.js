@@ -11,7 +11,9 @@ const toSafeUser = (user) => ({
 })
 
 const createUser = async ({ name, email, password, role }) => {
-  const existingUser = await User.findOne({ email })
+  const normalizedEmail = email.trim().toLowerCase()
+  const normalizedName = name.trim()
+  const existingUser = await User.findOne({ email: normalizedEmail })
   if (existingUser) {
     throw createAppError('User already exists', 409)
   }
@@ -19,8 +21,8 @@ const createUser = async ({ name, email, password, role }) => {
   const hashedPassword = await hashPassword(password)
 
   return User.create({
-    name,
-    email,
+    name: normalizedName,
+    email: normalizedEmail,
     password: hashedPassword,
     role,
   })
@@ -49,7 +51,11 @@ export const createAdminUser = async ({ name, email, password }) => {
 }
 
 export const loginUser = async ({ email, password }) => {
-  const user = await User.findOne({ email, isActive: true }).select('+password')
+  const normalizedEmail = email.trim().toLowerCase()
+  const user = await User.findOne({
+    email: normalizedEmail,
+    isActive: true,
+  }).select('+password')
 
   if (!user) {
     throw createAppError('Invalid credentials', 401)

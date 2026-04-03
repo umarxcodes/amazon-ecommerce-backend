@@ -1,6 +1,7 @@
 import redis from '../config/redis.config.js'
 
 export const getCartCacheKey = (userId) => `cart:${userId}`
+const productCacheVersionKey = 'products:cache:version'
 
 export const clearCartCache = async (userId) => {
   if (!redis) return
@@ -9,11 +10,14 @@ export const clearCartCache = async (userId) => {
 
 export const clearProductCache = async () => {
   if (!redis) return
-  const keys = await redis.keys('products:*')
+  await redis.incr(productCacheVersionKey)
+}
 
-  if (keys.length > 0) {
-    await redis.del(...keys)
-  }
+export const getProductCacheVersion = async () => {
+  if (!redis) return '0'
+
+  const version = await redis.get(productCacheVersionKey)
+  return String(version || '0')
 }
 
 export const getCachedValue = async (key) => {

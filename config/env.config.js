@@ -2,14 +2,24 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const requiredEnvKeys = ['MONGO_URI', 'JWT_SECRET']
+const requiredEnvKeys = [
+  'MONGO_URI',
+  'JWT_SECRET',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
+]
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 5000,
+  trustProxy: process.env.TRUST_PROXY || '1',
   mongoUri: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
+  clientUrl: process.env.CLIENT_URL,
+  corsOrigins: process.env.CORS_ORIGINS,
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
@@ -25,6 +35,10 @@ export const validateEnv = () => {
   }
 }
 
+export const isStripeConfigured = () => {
+  return Boolean(env.clientUrl && env.stripeSecretKey && env.stripeWebhookSecret)
+}
+
 export const isRedisConfigured = () => {
   return Boolean(env.upstashRedisRestUrl && env.upstashRedisRestToken)
 }
@@ -33,4 +47,15 @@ export const isCloudinaryConfigured = () => {
   return Boolean(
     env.cloudinaryCloudName && env.cloudinaryApiKey && env.cloudinaryApiSecret
   )
+}
+
+export const getCorsOrigins = () => {
+  if (!env.corsOrigins) {
+    return env.clientUrl ? [env.clientUrl] : []
+  }
+
+  return env.corsOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
 }

@@ -1,16 +1,12 @@
 import app from './app.js'
 import connectDB from './config/db.config.js'
-import { env, validateEnv, isRedisConfigured } from './config/env.config.js'
+import { env, validateEnv } from './config/env.config.js'
+import { ensureRedisConnection } from './config/redis.config.js'
 
 const startServer = async () => {
   validateEnv()
   await connectDB()
-
-  if (!isRedisConfigured()) {
-    console.warn(
-      '=====*** Redis is not configured. Cache features will run in no-op mode. ***====='
-    )
-  }
+  await ensureRedisConnection()
 
   app.listen(env.port, () => {
     console.info(

@@ -1,3 +1,5 @@
+import { createAppError } from '../utils/app-error.util.js'
+
 // ============================* VALIDATION MIDDLEWARE *=============================
 const validate = (schema) => async (req, res, next) => {
   try {
@@ -11,13 +13,7 @@ const validate = (schema) => async (req, res, next) => {
 
     next()
   } catch (err) {
-    console.error('=====*** VALIDATION ERROR ***=====', err.errors)
-
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: err.errors,
-    })
+    return next(createAppError('Validation failed', 400, err.errors))
   }
 }
 

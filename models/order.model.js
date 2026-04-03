@@ -57,6 +57,14 @@ const orderSchema = new mongoose.Schema(
 
     paidAt: Date,
 
+    paymentResult: {
+      id: String,
+      status: String,
+      emailAddress: String,
+      sessionId: String,
+      updatedAt: Date,
+    },
+
     /* ===== ORDER STATUS ===== */
     status: {
       type: String,
@@ -68,6 +76,8 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 )
+
+orderSchema.index({ user: 1, createdAt: -1 })
 
 /* ===== EXPORT MODEL ===== */
 export default mongoose.model('Order', orderSchema)
