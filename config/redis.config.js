@@ -1,20 +1,23 @@
 import { Redis } from '@upstash/redis'
 import { env, isRedisConfigured } from './env.config.js'
 
-if (!isRedisConfigured()) {
-  throw new Error(
-    'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required for distributed rate limiting.'
-  )
-}
-
-const redis = new Redis({
-  url: env.upstashRedisRestUrl,
-  token: env.upstashRedisRestToken,
-})
+const redis = isRedisConfigured()
+  ? new Redis({
+      url: env.upstashRedisRestUrl,
+      token: env.upstashRedisRestToken,
+    })
+  : null
 
 export const ensureRedisConnection = async () => {
+  if (!redis) {
+    return false
+  }
+
   await redis.ping()
+  return true
 }
+
+export const isRedisAvailable = () => Boolean(redis)
 
 /* =====*** EXPORT ***===== */
 export default redis

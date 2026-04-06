@@ -1,20 +1,23 @@
-/* =====*** IMPORTS ***===== */
-import asyncHandler from 'express-async-handler'
+/*
+📁 FILE: order.controller.js
+📌 PURPOSE: Exposes order creation and retrieval endpoints for authenticated
+users while keeping business rules inside the order service.
+========================================
+*/
+
+/* ===== IMPORTS ===== */
 import {
   createOrder as createOrderService,
   getMyOrders as getMyOrdersService,
   getOrderById as getOrderByIdService,
 } from '../services/order.service.js'
+import { asyncHandler } from '../utils/async-handler.util.js'
 
-/* ================= CREATE ORDER =================
-   Flow:
-   1. Get user cart
-   2. Validate cart
-   3. Convert cart → order items (snapshot)
-   4. Calculate total
-   5. Save order
-   6. Clear cart
-*/
+/* ===== ORDER CONTROLLER ===== */
+/* Handles order creation and access for owners or administrators. */
+
+/* ===== CREATE ORDER FUNCTION ===== */
+/* Creates an order from the current cart and returns the persisted order. */
 const createOrder = asyncHandler(async (req, res) => {
   const response = await createOrderService({
     userId: req.user.userId,
@@ -23,13 +26,15 @@ const createOrder = asyncHandler(async (req, res) => {
   res.status(201).json(response)
 })
 
-/* ================= GET MY ORDERS ================= */
+/* ===== GET MY ORDERS FUNCTION ===== */
+/* Returns the current user's order history in descending creation order. */
 const getMyOrders = asyncHandler(async (req, res) => {
   const response = await getMyOrdersService(req.user.userId)
   res.status(200).json(response)
 })
 
-/* ================= GET SINGLE ORDER ================= */
+/* ===== GET ORDER BY ID FUNCTION ===== */
+/* Returns one order if the requester is the owner or an administrator. */
 const getOrderById = asyncHandler(async (req, res) => {
   const response = await getOrderByIdService({
     orderId: req.params.id,

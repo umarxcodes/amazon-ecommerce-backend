@@ -1,11 +1,19 @@
-/* =====*** IMPORTS ***===== */
+/*
+📁 FILE: auth.middleware.js
+📌 PURPOSE: Authenticates bearer tokens, loads the active user context, and
+attaches authorization data to the request object.
+========================================
+*/
+
+/* ===== IMPORTS ===== */
 import jwt from 'jsonwebtoken'
-import asyncHandler from 'express-async-handler'
 import { env } from '../config/env.config.js'
 import User from '../models/user.model.js'
 import { createAppError } from '../utils/app-error.util.js'
+import { asyncHandler } from '../utils/async-handler.util.js'
 
-/* ================================* AUTH MIDDLEWARE *=============================== */
+/* ===== AUTH MIDDLEWARE ===== */
+/* Verifies JWT access tokens and exposes the authenticated user on req.user. */
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
   /* =====*** GET TOKEN FROM HEADER ***===== */

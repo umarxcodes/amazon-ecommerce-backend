@@ -71,14 +71,17 @@ const resolveKeys = async (req, descriptor) => {
   return values.filter(Boolean)
 }
 
-const setRateLimitHeaders = (res, { limit, current, resetAt }) => {
+const setRateLimitHeaders = (res, { limit, current, resetAt, includeRetryAfter = false }) => {
   const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - now()) / 1000))
   const remaining = Math.max(Math.floor(limit - current), 0)
 
   res.setHeader('X-RateLimit-Limit', String(limit))
   res.setHeader('X-RateLimit-Remaining', String(remaining))
   res.setHeader('X-RateLimit-Reset', new Date(resetAt).toISOString())
-  res.setHeader('Retry-After', String(retryAfterSeconds))
+
+  if (includeRetryAfter) {
+    res.setHeader('Retry-After', String(retryAfterSeconds))
+  }
 }
 
 export const createRateLimiter = ({
@@ -112,6 +115,7 @@ export const createRateLimiter = ({
             limit,
             current: result.current,
             resetAt: result.resetAt,
+            includeRetryAfter: true,
           })
 
           return next(
@@ -135,7 +139,11 @@ export const createRateLimiter = ({
 
       return next()
     } catch (error) {
-      return next(error)
+      if (redis) {
+        console.error(`Rate limiter degraded for namespace "${namespace}": ${error.message}`)
+      }
+
+      return next()
     }
   }
 }

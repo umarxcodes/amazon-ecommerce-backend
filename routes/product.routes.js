@@ -1,4 +1,11 @@
-/* =====*** IMPORTS ***===== */
+/*
+📁 FILE: product.routes.js
+📌 PURPOSE: Declares public catalog endpoints and admin-only product
+management routes with upload, validation, and rate-limit middleware.
+========================================
+*/
+
+/* ===== IMPORTS ===== */
 import { Router } from 'express'
 import productController from '../controllers/product.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
@@ -8,7 +15,7 @@ import {
   productValidationSchema,
   updateProductValidationSchema,
 } from '../validations/product.validation.js'
-import upload from '../middleware/upload.middleware.js'
+import upload, { requireCloudinaryUpload } from '../middleware/upload.middleware.js'
 import {
   adminRateLimit,
   publicApiRateLimit,
@@ -16,7 +23,8 @@ import {
 
 const router = Router()
 
-/* ============================* PUBLIC ROUTES *============================= */
+/* ===== PRODUCT ROUTES ===== */
+/* Public routes provide catalog access; protected routes manage inventory. */
 
 // =====*** Get All Products ***=====
 router.get('/', publicApiRateLimit, productController.getProducts)
@@ -32,6 +40,7 @@ router.post(
   authMiddleware,
   adminMiddleware,
   adminRateLimit,
+  requireCloudinaryUpload,
   upload.array('image', 5),
   validate(productValidationSchema),
   productController.createProduct
@@ -43,6 +52,7 @@ router.put(
   authMiddleware,
   adminMiddleware,
   adminRateLimit,
+  requireCloudinaryUpload,
   upload.array('image', 5),
   validate(updateProductValidationSchema),
   productController.updateProduct
