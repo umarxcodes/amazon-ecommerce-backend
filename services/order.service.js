@@ -1,3 +1,10 @@
+/*
+📁 FILE: order.service.js
+📌 PURPOSE: Creates orders from carts, performs stock mutation inside a
+transaction, and exposes order retrieval methods.
+========================================
+*/
+
 import mongoose from 'mongoose'
 import Order from '../models/order.model.js'
 import Cart from '../models/cart.model.js'
@@ -5,6 +12,8 @@ import Product from '../models/product.model.js'
 import { clearCartCache, clearProductCache } from './cache.service.js'
 import { createAppError } from '../utils/app-error.util.js'
 
+/* ===== CREATE ORDER FUNCTION ===== */
+/* Converts the cart into an order snapshot and deducts stock transactionally. */
 export const createOrder = async ({ userId, shippingAddress }) => {
   const session = await mongoose.startSession()
 
@@ -84,6 +93,8 @@ export const createOrder = async ({ userId, shippingAddress }) => {
   }
 }
 
+/* ===== GET MY ORDERS FUNCTION ===== */
+/* Returns all orders for the authenticated user. */
 export const getMyOrders = async (userId) => {
   const orders = await Order.find({ user: userId }).sort({ createdAt: -1 })
 
@@ -94,6 +105,8 @@ export const getMyOrders = async (userId) => {
   }
 }
 
+/* ===== GET ORDER BY ID FUNCTION ===== */
+/* Returns one order after ownership or admin-access verification. */
 export const getOrderById = async ({ orderId, userId, role }) => {
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw createAppError('Invalid order ID', 400)

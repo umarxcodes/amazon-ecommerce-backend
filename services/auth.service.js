@@ -1,8 +1,17 @@
+/*
+📁 FILE: auth.service.js
+📌 PURPOSE: Implements authentication business rules including normalization,
+credential checks, account creation, and token generation.
+========================================
+*/
+
 import User from '../models/user.model.js'
 import { hashPassword, comparePassword } from '../utils/hash.util.js'
 import { generateAccessToken } from '../utils/jwt.util.js'
 import { createAppError } from '../utils/app-error.util.js'
 
+/* ===== INPUT NORMALIZATION HELPERS ===== */
+/* Shared helpers keep auth validation rules consistent between flows. */
 const normalizeRequiredString = (value, fieldName) => {
   if (typeof value !== 'string') {
     throw createAppError(`${fieldName} must be a string`, 400)
@@ -38,6 +47,8 @@ const toSafeUser = (user) => ({
   role: user.role,
 })
 
+/* ===== USER CREATION HELPER ===== */
+/* Centralizes duplicate account creation logic for users and admins. */
 const createUser = async ({ name, email, password, role }) => {
   const normalizedEmail = normalizeEmail(email)
   const normalizedName = normalizeRequiredString(name, 'Name')
@@ -60,6 +71,8 @@ const createUser = async ({ name, email, password, role }) => {
   }
 }
 
+/* ===== REGISTER USER FUNCTION ===== */
+/* Creates a regular user account and returns a response without secrets. */
 export const registerUser = async ({ name, email, password }) => {
   const user = await createUser({ name, email, password, role: 'USER' })
 
@@ -70,6 +83,8 @@ export const registerUser = async ({ name, email, password }) => {
   }
 }
 
+/* ===== CREATE ADMIN USER FUNCTION ===== */
+/* Creates an administrator account using the shared creation workflow. */
 export const createAdminUser = async ({ name, email, password }) => {
   const admin = await createUser({ name, email, password, role: 'ADMIN' })
 
@@ -80,6 +95,8 @@ export const createAdminUser = async ({ name, email, password }) => {
   }
 }
 
+/* ===== LOGIN USER FUNCTION ===== */
+/* Verifies credentials and returns an access token for active users. */
 export const loginUser = async ({ email, password }) => {
   const normalizedEmail = normalizeEmail(email)
   const normalizedPassword = normalizePassword(password)

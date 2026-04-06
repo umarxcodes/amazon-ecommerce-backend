@@ -1,6 +1,11 @@
-/* ================================* GLOBAL ERROR HANDLER *=============================== */
+/*
+========================================
+*/
+
+/* ===== GLOBAL ERROR HANDLER ===== */
 const errorHandler = (err, req, res, next) => {
-  let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode)
+  let statusCode =
+    err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode)
   let message = err.message || 'Internal server error'
   let details = err.details || null
 
@@ -44,6 +49,7 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
+    statusCode,
     details,
     stack: process.env.NODE_ENV === 'development' ? err.stack : null,
   })

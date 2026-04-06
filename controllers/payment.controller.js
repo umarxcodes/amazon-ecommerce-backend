@@ -1,10 +1,21 @@
-import asyncHandler from 'express-async-handler'
+/*
+📁 FILE: payment.controller.js
+📌 PURPOSE: Validates checkout requests and coordinates payment session
+creation for orders that are eligible for payment.
+========================================
+*/
+
 import mongoose from 'mongoose'
 import Order from '../models/order.model.js'
 import { createAppError } from '../utils/app-error.util.js'
 import { createCheckoutSession } from '../services/payment.service.js'
+import { asyncHandler } from '../utils/async-handler.util.js'
 
-/* ================= CREATE CHECKOUT ================= */
+/* ===== PAYMENT CONTROLLER ===== */
+/* Handles Stripe checkout session creation for unpaid orders. */
+
+/* ===== CREATE CHECKOUT FUNCTION ===== */
+/* Ensures the order is payable and returns the Stripe checkout URL. */
 const checkout = asyncHandler(async (req, res) => {
   const { orderId } = req.body
 

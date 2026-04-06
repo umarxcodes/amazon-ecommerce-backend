@@ -1,8 +1,16 @@
+/*
+📁 FILE: payment.service.js
+📌 PURPOSE: Builds Stripe checkout sessions from internal order data while
+ensuring required payment configuration is present.
+========================================
+*/
+
 import stripe from '../config/stripe.config.js'
 import { env, isStripeConfigured } from '../config/env.config.js'
 import { createAppError } from '../utils/app-error.util.js'
 
-/* ================= CREATE CHECKOUT SESSION ================= */
+/* ===== CREATE CHECKOUT SESSION FUNCTION ===== */
+/* Maps order items to Stripe line items and creates a hosted checkout session. */
 export const createCheckoutSession = async ({ order, customerEmail }) => {
   if (!isStripeConfigured() || !stripe) {
     throw createAppError(

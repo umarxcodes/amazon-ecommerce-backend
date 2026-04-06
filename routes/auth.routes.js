@@ -1,4 +1,11 @@
-/* =====*** IMPORTS ***===== */
+/*
+📁 FILE: auth.routes.js
+📌 PURPOSE: Declares authentication-related endpoints and composes the
+middleware stack for validation, rate limiting, and authorization.
+========================================
+*/
+
+/* ===== IMPORTS ===== */
 import express from 'express'
 import authController from '../controllers/auth.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
@@ -12,7 +19,8 @@ import { registerSchema, loginSchema } from '../validations/auth.validation.js'
 
 const router = express.Router()
 
-/* ================================* PUBLIC ROUTES *=============================== */
+/* ===== AUTH ROUTES ===== */
+/* Public routes cover registration and login, while admin-create is protected. */
 router.post(
   '/register',
   authRouteRateLimit,

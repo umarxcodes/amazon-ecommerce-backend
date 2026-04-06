@@ -5,8 +5,6 @@ dotenv.config()
 const requiredEnvKeys = [
   'MONGO_URI',
   'JWT_SECRET',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
 ]
 
 export const env = {
@@ -25,6 +23,7 @@ export const env = {
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
   upstashRedisRestUrl: process.env.UPSTASH_REDIS_REST_URL,
   upstashRedisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+  disableRedis: process.env.DISABLE_REDIS === 'true',
 }
 
 export const validateEnv = () => {
@@ -40,6 +39,10 @@ export const isStripeConfigured = () => {
 }
 
 export const isRedisConfigured = () => {
+  if (env.disableRedis) {
+    return false
+  }
+
   return Boolean(env.upstashRedisRestUrl && env.upstashRedisRestToken)
 }
 

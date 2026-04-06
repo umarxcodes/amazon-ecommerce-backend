@@ -1,6 +1,8 @@
 import multer from 'multer'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import cloudinary from '../config/cloudinary.config.js'
+import { isCloudinaryConfigured } from '../config/env.config.js'
+import { createAppError } from '../utils/app-error.util.js'
 
 // ===== CLOUDINARY STORAGE CONFIG =====
 const storage = new CloudinaryStorage({
@@ -34,5 +36,18 @@ const upload = multer({
     fileSize: 2 * 1024 * 1024, // 2MB limit
   },
 })
+
+export const requireCloudinaryUpload = (req, res, next) => {
+  if (!isCloudinaryConfigured()) {
+    return next(
+      createAppError(
+        'Cloudinary is not configured. Product image uploads are unavailable.',
+        503
+      )
+    )
+  }
+
+  return next()
+}
 
 export default upload

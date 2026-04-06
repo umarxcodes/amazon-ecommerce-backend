@@ -1,3 +1,4 @@
+import helmet from 'helmet'
 import { env, getCorsOrigins } from '../config/env.config.js'
 
 const allowedOrigins = new Set(getCorsOrigins())
@@ -21,11 +22,9 @@ export const applyAppSecurity = (app) => {
     app.set('trust proxy', Number.isNaN(proxyValue) ? env.trustProxy : proxyValue)
   }
 
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.setHeader('X-Frame-Options', 'DENY')
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
-    res.setHeader('X-XSS-Protection', '0')
-    next()
-  })
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: false,
+    })
+  )
 }

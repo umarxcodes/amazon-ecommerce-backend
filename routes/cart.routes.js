@@ -1,4 +1,4 @@
-/* =====*** IMPORTS ***===== */
+/* ===== IMPORTS ===== */
 import express from 'express'
 import cartController from '../controllers/cart.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
@@ -10,10 +10,15 @@ import {
 
 const router = express.Router()
 
-/* ================= CART ROUTES (ALL PROTECTED) ================= */
+/* ===== CART ROUTES ===== */
 
 // ===== ADD TO CART =====
-router.post('/', authMiddleware, validate(addToCartSchema), cartController.addToCart)
+router.post(
+  '/',
+  authMiddleware,
+  validate(addToCartSchema),
+  cartController.addToCart
+)
 
 // ===== GET USER CART =====
 router.get('/', authMiddleware, cartController.getCart)
