@@ -1,10 +1,3 @@
-/*
-📁 FILE: server.js
-📌 PURPOSE: Boots infrastructure dependencies, starts the HTTP server, and
-handles graceful shutdown for long-running environments.
-========================================
-*/
-
 import app from './app.js'
 import connectDB from './config/db.config.js'
 import { env, validateEnv } from './config/env.config.js'
