@@ -23,6 +23,9 @@ router.post(
 // ===== GET USER CART =====
 router.get('/', authMiddleware, cartController.getCart)
 
+// ===== CLEAR CART =====
+router.delete('/clear', authMiddleware, cartController.clearCart)
+
 // ===== UPDATE ITEM =====
 router.put(
   '/:productId',
@@ -33,8 +36,5 @@ router.put(
 
 // ===== REMOVE ITEM =====
 router.delete('/:productId', authMiddleware, cartController.removeFromCart)
-
-// ===== CLEAR CART =====
-router.delete('/', authMiddleware, cartController.clearCart)
 
 export default router

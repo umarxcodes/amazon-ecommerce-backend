@@ -48,10 +48,21 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
 
     next()
   } catch (error) {
+    // If it's already an AppError with statusCode, re-throw it
     if (error.statusCode) {
       throw error
     }
 
+    // Handle JWT-specific errors (expired, invalid, etc.)
+    if (error.name === 'TokenExpiredError') {
+      throw createAppError('Token expired', 401)
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      throw createAppError('Invalid token', 401)
+    }
+
+    // Default: token is invalid or malformed
     throw createAppError('Not authorized, token invalid', 401)
   }
 })

@@ -55,7 +55,8 @@ const incrementSlidingWindowCounter = async ({ key, windowMs }) => {
 
 const incrementCounter = async (config) => {
   if (!redis) {
-    throw new Error('Redis client is required for distributed rate limiting.')
+    // Redis not configured - degrade gracefully by allowing the request
+    return { current: 0, resetAt: Date.now() + config.windowMs }
   }
 
   return incrementSlidingWindowCounter(config)
@@ -71,7 +72,10 @@ const resolveKeys = async (req, descriptor) => {
   return values.filter(Boolean)
 }
 
-const setRateLimitHeaders = (res, { limit, current, resetAt, includeRetryAfter = false }) => {
+const setRateLimitHeaders = (
+  res,
+  { limit, current, resetAt, includeRetryAfter = false }
+) => {
   const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - now()) / 1000))
   const remaining = Math.max(Math.floor(limit - current), 0)
 
@@ -140,7 +144,9 @@ export const createRateLimiter = ({
       return next()
     } catch (error) {
       if (redis) {
-        console.error(`Rate limiter degraded for namespace "${namespace}": ${error.message}`)
+        console.error(
+          `Rate limiter degraded for namespace "${namespace}": ${error.message}`
+        )
       }
 
       return next()
