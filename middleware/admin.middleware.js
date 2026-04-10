@@ -6,7 +6,7 @@ import { createAppError } from '../utils/app-error.util.js'
 /* ===== ADMIN AUTHORIZATION MIDDLEWARE ===== */
 
 const adminMiddleware = asyncHandler(async (req, res, next) => {
-  if (req.user && req.user.role === 'ADMIN') {
+  if (req.user && req.user.role === 'admin') {
     next()
   } else {
     throw createAppError('Admin access only', 403)
