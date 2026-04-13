@@ -35,8 +35,8 @@ export const createCheckoutSession = async ({ order, customerEmail }) => {
     payment_method_types: ['card'],
     line_items: lineItems,
     mode: 'payment',
-    success_url: `${env.clientUrl}/success?orderId=${order._id}`,
-    cancel_url: `${env.clientUrl}/cancel?orderId=${order._id}`,
+    success_url: `${env.clientUrl}/payment/return/${order._id}`,
+    cancel_url: `${env.clientUrl}/payment/return/${order._id}?canceled=true`,
     ...(customerEmail ? { customer_email: customerEmail } : {}),
     metadata: {
       orderId: order._id.toString(),

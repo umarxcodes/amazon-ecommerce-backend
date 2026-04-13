@@ -10,6 +10,7 @@ import {
   createOrder as createOrderService,
   getMyOrders as getMyOrdersService,
   getOrderById as getOrderByIdService,
+  cancelOrder as cancelOrderService,
 } from '../services/order.service.js'
 import { asyncHandler } from '../utils/async-handler.util.js'
 
@@ -44,9 +45,21 @@ const getOrderById = asyncHandler(async (req, res) => {
   res.status(200).json(response)
 })
 
+/* ===== CANCEL ORDER FUNCTION ===== */
+/* Cancels an unpaid pending order and restores the deducted stock. */
+const cancelOrder = asyncHandler(async (req, res) => {
+  const response = await cancelOrderService({
+    orderId: req.params.id,
+    userId: req.user.userId,
+    role: req.user.role,
+  })
+  res.status(200).json(response)
+})
+
 /* ===== EXPORT CONTROLLER ===== */
 export default {
   createOrder,
   getMyOrders,
   getOrderById,
+  cancelOrder,
 }

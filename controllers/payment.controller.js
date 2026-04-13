@@ -33,7 +33,10 @@ const checkout = asyncHandler(async (req, res) => {
   const isAdmin = req.user.role === 'ADMIN'
 
   if (!isOwner && !isAdmin) {
-    throw createAppError('Not authorized to create checkout for this order', 403)
+    throw createAppError(
+      'Not authorized to create checkout for this order',
+      403
+    )
   }
 
   if (!order.items.length) {
@@ -42,6 +45,14 @@ const checkout = asyncHandler(async (req, res) => {
 
   if (order.isPaid) {
     throw createAppError('Order already paid', 400)
+  }
+
+  if (order.status === 'cancelled') {
+    throw createAppError('Order has been cancelled', 400)
+  }
+
+  if (order.expiresAt && order.expiresAt < new Date()) {
+    throw createAppError('Order has expired. Please create a new order.', 400)
   }
 
   /* ===== CREATE STRIPE SESSION ===== */
