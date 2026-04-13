@@ -2808,6 +2808,11 @@ qs@^6.14.0, qs@^6.14.1:
   dependencies:
     side-channel "^1.1.0"
 
+radis@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/radis/-/radis-2.0.0.tgz#d1478d276935e80c894959b1572eb1eede0c4e68"
+  integrity sha512-GOOtEO6u2jcuI/mQcatLQ1Ge79nHVMD3hRpdi2noi8Cj66XOzVbk73PWMKZMv5qEghg3Y7oRwx5stot7z+9gJA==
+
 range-parser@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/range-parser/-/range-parser-1.2.1.tgz#3cf37023d199e1c24d1a55b84800c2f3e6468031"
