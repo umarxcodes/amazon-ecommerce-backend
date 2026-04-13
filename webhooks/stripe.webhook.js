@@ -32,7 +32,7 @@ const stripeWebhook = async (req, res) => {
 
       if (orderId) {
         await Order.findOneAndUpdate(
-          { _id: orderId, isPaid: false },
+          { _id: orderId, isPaid: false, status: 'pending' },
           {
             $set: {
               isPaid: true,

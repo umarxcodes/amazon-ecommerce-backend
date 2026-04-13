@@ -28,7 +28,9 @@ const connectDB = async () => {
     return conn
   } catch (error) {
     cachedConnectionPromise = null
-    console.error(`=====*** MongoDB Connection Error: ${error.message} ***=====`)
+    console.error(
+      `=====*** MongoDB Connection Error: ${error.message} ***=====`
+    )
     throw error
   }
 }

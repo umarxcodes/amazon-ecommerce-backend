@@ -68,8 +68,14 @@ const orderSchema = new mongoose.Schema(
     /* ===== ORDER STATUS ===== */
     status: {
       type: String,
-      enum: ['pending', 'paid', 'shipped', 'delivered'],
+      enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'],
       default: 'pending',
+    },
+
+    /* ===== ORDER EXPIRATION (30 min TTL for unpaid orders) ===== */
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 30 * 60 * 1000),
     },
   },
   {
@@ -77,6 +83,7 @@ const orderSchema = new mongoose.Schema(
   }
 )
 
+/* Expire unpaid orders automatically */
 orderSchema.index({ user: 1, createdAt: -1 })
 
 /* ===== EXPORT MODEL ===== */

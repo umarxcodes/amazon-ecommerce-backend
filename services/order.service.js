@@ -51,7 +51,9 @@ export const createOrder = async ({ userId, shippingAddress }) => {
       )
 
       for (const item of cart.items) {
-        const product = await Product.findById(item.product._id).session(session)
+        const product = await Product.findById(item.product._id).session(
+          session
+        )
 
         if (!product || product.stock < item.quantity) {
           throw createAppError(`Not enough stock for ${product?.name}`, 400)
@@ -128,5 +130,61 @@ export const getOrderById = async ({ orderId, userId, role }) => {
   return {
     success: true,
     order,
+  }
+}
+
+/* ===== CANCEL ORDER FUNCTION ===== */
+/* Cancels an unpaid pending order and restores deducted stock. */
+export const cancelOrder = async ({ orderId, userId, role }) => {
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw createAppError('Invalid order ID', 400)
+  }
+
+  const session = await mongoose.startSession()
+
+  try {
+    let cancelledOrder
+
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({
+        _id: orderId,
+        user: userId,
+        status: 'pending',
+        isPaid: false,
+      }).session(session)
+
+      if (!order) {
+        throw createAppError(
+          'Order not found, already paid, already cancelled, or not yours',
+          404
+        )
+      }
+
+      // Restore stock for each order item
+      for (const item of order.items) {
+        if (item.product) {
+          await Product.findByIdAndUpdate(
+            item.product,
+            { $inc: { stock: item.quantity } },
+            { session }
+          )
+        }
+      }
+
+      order.status = 'cancelled'
+      await order.save({ session })
+
+      cancelledOrder = order
+    })
+
+    await clearProductCache()
+
+    return {
+      success: true,
+      message: 'Order cancelled and stock restored',
+      order: cancelledOrder,
+    }
+  } finally {
+    await session.endSession()
   }
 }
