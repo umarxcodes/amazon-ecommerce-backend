@@ -1,10 +1,3 @@
-/*
-📁 FILE: order.service.js
-📌 PURPOSE: Creates orders from carts, performs stock mutation inside a
-transaction, and exposes order retrieval methods.
-========================================
-*/
-
 import mongoose from 'mongoose'
 import Order from '../models/order.model.js'
 import Cart from '../models/cart.model.js'
@@ -12,8 +5,6 @@ import Product from '../models/product.model.js'
 import { clearCartCache, clearProductCache } from './cache.service.js'
 import { createAppError } from '../utils/app-error.util.js'
 
-/* ===== CREATE ORDER FUNCTION ===== */
-/* Converts the cart into an order snapshot and deducts stock transactionally. */
 export const createOrder = async ({ userId, shippingAddress }) => {
   const session = await mongoose.startSession()
 
@@ -95,8 +86,6 @@ export const createOrder = async ({ userId, shippingAddress }) => {
   }
 }
 
-/* ===== GET MY ORDERS FUNCTION ===== */
-/* Returns all orders for the authenticated user. */
 export const getMyOrders = async (userId) => {
   const orders = await Order.find({ user: userId }).sort({ createdAt: -1 })
 
@@ -107,8 +96,6 @@ export const getMyOrders = async (userId) => {
   }
 }
 
-/* ===== GET ORDER BY ID FUNCTION ===== */
-/* Returns one order after ownership or admin-access verification. */
 export const getOrderById = async ({ orderId, userId, role }) => {
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw createAppError('Invalid order ID', 400)
@@ -133,8 +120,6 @@ export const getOrderById = async ({ orderId, userId, role }) => {
   }
 }
 
-/* ===== CANCEL ORDER FUNCTION ===== */
-/* Cancels an unpaid pending order and restores deducted stock. */
 export const cancelOrder = async ({ orderId, userId, role }) => {
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw createAppError('Invalid order ID', 400)
@@ -146,12 +131,17 @@ export const cancelOrder = async ({ orderId, userId, role }) => {
     let cancelledOrder
 
     await session.withTransaction(async () => {
-      const order = await Order.findOne({
+      const orderQuery = {
         _id: orderId,
-        user: userId,
         status: 'pending',
         isPaid: false,
-      }).session(session)
+      }
+
+      if (role !== 'ADMIN') {
+        orderQuery.user = userId
+      }
+
+      const order = await Order.findOne(orderQuery).session(session)
 
       if (!order) {
         throw createAppError(
@@ -160,7 +150,6 @@ export const cancelOrder = async ({ orderId, userId, role }) => {
         )
       }
 
-      // Restore stock for each order item
       for (const item of order.items) {
         if (item.product) {
           await Product.findByIdAndUpdate(

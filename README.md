@@ -1,142 +1,173 @@
 # Amazon-Style Ecommerce Backend
 
-Production-oriented ecommerce backend built with Node.js, Express, MongoDB, Upstash Redis, Stripe, and Cloudinary. The API supports authentication, catalog management, cart workflows, order creation, checkout, and administrative user management.
+[![Node.js Version](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Express](https://img.shields.io/badge/Express-5.x-black)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.x-green)](https://www.mongodb.com/)
+[![Tests](https://img.shields.io/badge/Tests-Jest-orange)](https://jestjs.io/)
 
-## Table of Contents
+A production-grade REST API for a full-featured ecommerce platform. Built with Node.js, Express, MongoDB, Redis, Stripe, and Cloudinary — this backend handles authentication, product catalogs, shopping carts, order management, payment processing, and administrative user management out of the box.
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Running the Project](#running-the-project)
-- [API Conventions](#api-conventions)
-- [Authentication and Authorization](#authentication-and-authorization)
-- [API Reference](#api-reference)
-- [Error Handling](#error-handling)
-- [Security Notes](#security-notes)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Known Limitations](#known-limitations)
-- [Future Improvements](#future-improvements)
+Designed for developers who need a solid, scalable foundation for building ecommerce applications without starting from scratch.
 
-## Overview
+## 🌐 Live Demo
 
-This project is organized as a modular Express backend with separate route, controller, service, validation, middleware, and model layers.
+- **API Base URL:** `http://localhost:5000/api`
+- **Health Check:** `GET http://localhost:5000/`
+- **Deployed:** _[Add your deployment URL]_
 
-Core capabilities:
+## ✨ Features
 
-- User registration and login with JWT access tokens
-- Admin-only product and user-management endpoints
-- Product listing with filtering, sorting, pagination, and cache invalidation
-- Per-user cart system with stock checks
-- Order creation from cart contents
-- Stripe Checkout integration with webhook-based payment updates
-- Redis-backed rate limiting and cache support
-- Cloudinary-backed product image uploads
+### 🔐 Authentication & Authorization
 
-## Features
+- User registration with email, password, and name
+- JWT-based login with configurable token expiry
+- Role-based access control (`USER` / `ADMIN`)
+- Account deactivation and soft-delete support
+- Active-user enforcement at middleware level
 
-### Authentication
+### 🛍️ Product Catalog
 
-- Register user
-- Login user
-- Create admin user from protected admin flow
-- Block inactive users at auth middleware level
+- CRUD operations with admin-only write access
+- Full-text search with regex-based name/description matching
+- Filtering by category, price range, and minimum rating
+- Pagination with configurable page size (max 100)
+- Sorting by price, creation date, or ratings
+- Redis-backed cache invalidation on product mutations
+- Cloudinary image uploads (up to 5 images per product)
 
-### Product Catalog
+### 🛒 Shopping Cart
 
-- Public product listing
-- Product detail endpoint
-- Search, price filters, category filter, rating filter
-- Pagination and sort options
-- Admin create, update, and delete endpoints
+- Per-user cart with one-to-one relationship
+- Real-time stock validation on add and update
+- Price snapshots at time of adding (immune to price changes)
+- Redis cache for fast cart retrieval
+- Increment, decrement, remove, and clear operations
 
-### Cart
+### 📦 Orders
 
-- Add item
-- Get cart
-- Update quantity
-- Remove single item
-- Clear cart
+- Atomic order creation from cart via MongoDB transactions
+- Stock deduction at order time with rollback on cancellation
+- Order history per user
+- Ownership and admin-based access control
+- 30-minute TTL for unpaid orders
+- Order cancellation with automatic stock restoration
 
-### Orders and Payments
+### 💳 Payments
 
-- Create order from cart
-- Fetch current user orders
-- Fetch single order with ownership/admin checks
-- Create Stripe Checkout session for unpaid orders
-- Handle Stripe webhook updates
+- Stripe Checkout session creation
+- Webhook-based payment confirmation with idempotency guard
+- Per-order payment tracking with result metadata
+- Checkout rate limiting per user and IP
 
-### Admin
+### 👤 Admin Management
 
-- Create admin
-- Get all users
-- Change user role
-- Deactivate user
+- Admin-only user creation via protected endpoint
+- View all users with full details
+- Role promotion/demotion (`USER` ↔ `ADMIN`)
+- User deactivation (blocks login and API access)
+- Self-protection: admins cannot change their own role
 
-## Tech Stack
+### 🛡️ Security
 
-### Backend
+- Password hashing with bcrypt (12 rounds)
+- Helmet security headers
+- CORS origin allow-list
+- Redis-backed sliding-window rate limiting (per-IP, per-email, per-user)
+- Input validation with Yup (body sanitization, unknown field stripping)
+- File upload restrictions (MIME type, 2MB size limit)
+- JWT token expiry and active-user enforcement
 
-- Node.js
-- Express 5
-- ES Modules
+## 🧱 Tech Stack
 
-### Database and Storage
+| Category       | Technology                         |
+| -------------- | ---------------------------------- |
+| **Runtime**    | Node.js 18+ (ES Modules)           |
+| **Framework**  | Express 5                          |
+| **Database**   | MongoDB 7 with Mongoose 9          |
+| **Cache**      | Upstash Redis (REST API)           |
+| **Auth**       | JWT (jsonwebtoken) + bcrypt        |
+| **Validation** | Yup                                |
+| **Payments**   | Stripe Checkout + Webhooks         |
+| **Storage**    | Cloudinary (product images)        |
+| **Uploads**    | Multer + multer-storage-cloudinary |
+| **Testing**    | Jest + Supertest                   |
+| **Security**   | Helmet, CORS, custom rate limiter  |
+| **Deployment** | Vercel (serverless)                |
 
-- MongoDB
-- Mongoose
-- Upstash Redis
-- Cloudinary
+## 🏗️ Architecture
 
-### Security and Validation
-
-- JSON Web Tokens
-- bcrypt
-- helmet
-- Yup
-
-### Payments and Tooling
-
-- Stripe
-- Multer
-- Jest
-- Supertest
-
-## Architecture
-
-Current request flow:
-
-```text
-Route -> Middleware -> Controller -> Service -> Mongoose Model
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Client (Browser/Mobile)               │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTP Request
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Vercel Edge / Load Balancer              │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    api/index.js (Serverless)                  │
+│                    └─ or ─ server.js (Local)                 │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         app.js                               │
+│  ┌──────────┐ ┌────────┐ ┌──────────┐ ┌───────────────────┐ │
+│  │ Security │ │  CORS  │ │RateLimit │ │  Webhook (raw)    │ │
+│  │ (Helmet) │ │        │ │ (DDoS)   │ │  Stripe           │ │
+│  └──────────┘ └────────┘ └──────────┘ └───────────────────┘ │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              JSON Body Parser (1MB limit)               ││
+│  └─────────────────────────────────────────────────────────┘│
+│  ┌────────┐ ┌──────────┐ ┌────────┐ ┌────────┐ ┌─────────┐ │
+│  │ /auth  │ │/products │ │/admin  │ │ /cart  │ │/orders  │ │
+│  │        │ │          │ │        │ │        │ │/payment │ │
+│  └───┬────┘ └────┬─────┘ └───┬────┘ └───┬────┘ └────┬────┘ │
+└──────┼───────────┼───────────┼──────────┼────────────┼──────┘
+       │           │           │          │            │
+       ▼           ▼           ▼          ▼            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Routes → Controllers → Services            │
+│                              │                               │
+│              ┌───────────────┼───────────────┐               │
+│              ▼               ▼               ▼               │
+│        Mongoose Models   Redis Cache   Stripe API            │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-This is clean enough for a small-to-medium backend, but it is not a strict clean architecture yet because controllers and services still depend directly on Mongoose models instead of repositories.
+## 📁 Project Structure
 
-## Project Structure
-
-```text
+```
 amazon-ecommerce-backend/
-├── api/                # Vercel serverless entrypoint
-├── config/             # Env loading and third-party service config
-├── controllers/        # HTTP orchestration layer
-├── middleware/         # Auth, admin, validation, security, rate limiting, errors
-├── models/             # Mongoose schemas
-├── routes/             # API route declarations
-├── services/           # Business logic
-├── tests/              # Unit and route-level API tests
-├── utils/              # Shared utilities
-├── validations/        # Yup schemas
-├── webhooks/           # Stripe webhook handler
-├── app.js              # Express app composition
-├── server.js           # Local runtime entrypoint
-└── vercel.json         # Vercel routing config
+├── api/                     # Vercel serverless entry point
+├── config/                  # Database, Redis, Cloudinary, env configuration
+├── controllers/             # HTTP layer — parse requests, call services, send responses
+├── middleware/              # Auth, admin check, validation, security, rate limiting, error handler
+├── models/                  # Mongoose schemas (User, Product, Cart, Order)
+├── routes/                  # Express route declarations with middleware chains
+├── services/                # Business logic — DB operations, caching, Stripe integration
+├── utils/                   # Shared utilities — AppError, async handler, hashing, JWT
+├── validations/             # Yup validation schemas for request bodies
+├── webhooks/                # Stripe webhook handler with signature verification
+├── app.js                   # Express app composition and middleware registration
+├── server.js                # Local development/production server entry point
+├── vercel.json              # Vercel deployment routing configuration
+└── package.json             # Dependencies and scripts
 ```
 
-## Getting Started
+## 🚀 Getting Started
+
+### Prerequisites
+
+| Requirement | Version             |
+| ----------- | ------------------- |
+| Node.js     | 18+                 |
+| npm / yarn  | Latest              |
+| MongoDB     | 5+ (local or Atlas) |
 
 ### 1. Clone the Repository
 
@@ -147,161 +178,159 @@ cd amazon-ecommerce-backend
 
 ### 2. Install Dependencies
 
-Using Yarn:
-
 ```bash
+# With yarn (recommended)
 yarn install
-```
 
-Using npm:
-
-```bash
+# Or with npm
 npm install
 ```
 
-### 3. Create a `.env` File
+### 3. Set Up Environment Variables
+
+Copy the example below into a `.env` file:
 
 ```env
+# ─── Application ───
 NODE_ENV=development
 PORT=5000
 TRUST_PROXY=1
 
+# ─── Database ───
 MONGO_URI=mongodb://127.0.0.1:27017/amazon-backend
-JWT_SECRET=replace-with-a-strong-secret
+
+# ─── JWT ───
+JWT_SECRET=replace-with-a-strong-random-secret
 JWT_EXPIRES_IN=1h
 
+# ─── CORS ───
 CLIENT_URL=http://localhost:3000
 CORS_ORIGINS=http://localhost:3000
 
+# ─── Stripe ───
 STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxx
 STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx
 
+# ─── Cloudinary ───
 CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-cloudinary-api-key
-CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 
-UPSTASH_REDIS_REST_URL=https://your-upstash-instance.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-upstash-token
+# ─── Redis (Upstash) — Optional ───
+UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token
+# DISABLE_REDIS=true   # Uncomment to bypass Redis locally
 ```
 
-## Environment Variables
+## 📋 Environment Variables
 
-### Required for Application Startup
+### Application
 
-- `MONGO_URI`
-- `JWT_SECRET`
+| Variable      | Required | Description                      | Example       |
+| ------------- | -------- | -------------------------------- | ------------- |
+| `NODE_ENV`    | No       | Runtime environment              | `development` |
+| `PORT`        | No       | HTTP server port (default: 5000) | `5000`        |
+| `TRUST_PROXY` | No       | Express trust proxy setting      | `1`           |
 
-### Required for Stripe Checkout
+### Database
 
-- `CLIENT_URL`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+| Variable    | Required | Description               | Example                                    |
+| ----------- | -------- | ------------------------- | ------------------------------------------ |
+| `MONGO_URI` | **Yes**  | MongoDB connection string | `mongodb://127.0.0.1:27017/amazon-backend` |
 
-### Required for Cloudinary Uploads
+### JWT
 
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
+| Variable         | Required | Description               | Example                  |
+| ---------------- | -------- | ------------------------- | ------------------------ |
+| `JWT_SECRET`     | **Yes**  | Secret for signing tokens | `random-string-32-chars` |
+| `JWT_EXPIRES_IN` | No       | Token expiry duration     | `1h`                     |
 
-### Optional but Recommended
+### CORS
 
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
-- `JWT_EXPIRES_IN`
-- `CORS_ORIGINS`
-- `TRUST_PROXY`
-- `DISABLE_REDIS=true` for local runs where Redis should be bypassed
+| Variable       | Required | Description                       | Example                 |
+| -------------- | -------- | --------------------------------- | ----------------------- |
+| `CLIENT_URL`   | Yes\*    | Frontend URL for Stripe redirects | `http://localhost:3000` |
+| `CORS_ORIGINS` | No       | Comma-separated allowed origins   | `http://localhost:3000` |
 
-## Running the Project
+### Stripe
 
-Development:
+| Variable                | Required | Description                   | Example       |
+| ----------------------- | -------- | ----------------------------- | ------------- |
+| `STRIPE_SECRET_KEY`     | Yes\*    | Stripe API secret key         | `sk_test_xxx` |
+| `STRIPE_WEBHOOK_SECRET` | Yes\*    | Stripe webhook signing secret | `whsec_xxx`   |
+
+### Cloudinary
+
+| Variable                | Required | Description           | Example    |
+| ----------------------- | -------- | --------------------- | ---------- |
+| `CLOUDINARY_CLOUD_NAME` | Yes\*    | Cloudinary cloud name | `mycloud`  |
+| `CLOUDINARY_API_KEY`    | Yes\*    | Cloudinary API key    | `12345678` |
+| `CLOUDINARY_API_SECRET` | Yes\*    | Cloudinary API secret | `abcdefg`  |
+
+### Redis (Upstash)
+
+| Variable                   | Required | Description                  | Example                  |
+| -------------------------- | -------- | ---------------------------- | ------------------------ |
+| `UPSTASH_REDIS_REST_URL`   | No       | Upstash Redis REST endpoint  | `https://xxx.upstash.io` |
+| `UPSTASH_REDIS_REST_TOKEN` | No       | Upstash authentication token | `your-token`             |
+| `DISABLE_REDIS`            | No       | Set to `true` to skip Redis  | `true`                   |
+
+_\* Required for the respective feature to function. The app starts without them but the feature will be unavailable._
+
+## ▶️ Running the Project
+
+### Development Mode
 
 ```bash
 yarn dev
+# or
+npm run dev
 ```
 
-Production:
+Server starts with hot-reload via nodemon on `http://localhost:5000`.
+
+### Production Mode
 
 ```bash
 yarn start
+# or
+npm start
 ```
 
-Health checks:
+### Health Checks
 
 ```bash
+# Root health check
 curl http://localhost:5000/
-curl http://localhost:5000/healthz
+# Response: {"success":true,"message":"API is running"}
+
+# Direct API check
+curl http://localhost:5000/api
+# Response: 404 (no routes registered at /api directly)
 ```
 
-Expected root response:
+## 📡 API Reference
 
-```json
-{
-  "success": true,
-  "message": "API is running"
-}
-```
+**Base URL:** `http://localhost:5000/api`
 
-## API Conventions
-
-Base URL:
-
-```text
-http://localhost:5000/api
-```
-
-Authentication header for protected routes:
+**Authentication Header:**
 
 ```http
 Authorization: Bearer <access-token>
 ```
 
-Success responses generally follow:
-
-```json
-{
-  "success": true,
-  "message": "Optional message",
-  "data": {}
-}
-```
-
-Some endpoints return domain keys such as `product`, `cart`, `order`, or `products` instead of a top-level `data` field. This is an existing project convention.
-
-## Authentication and Authorization
-
-### JWT Flow
-
-1. User registers or logs in.
-2. Login returns a signed access token.
-3. Client sends the token as `Authorization: Bearer <token>`.
-4. `auth.middleware.js` verifies the token and loads the active user.
-5. `admin.middleware.js` restricts admin-only routes.
-
-### Roles
-
-- `USER`
-- `ADMIN`
-
-### Protected Areas
-
-- Cart routes: authenticated users
-- Order routes: authenticated users
-- Checkout route: authenticated users with order ownership or admin role
-- Admin routes: `ADMIN` only
-- Product write routes: `ADMIN` only
-
-## API Reference
-
-### Auth APIs
+### Auth
 
 #### `POST /api/auth/register`
 
-Create a standard user account.
+Create a new user account.
 
-Auth: No
+| Detail         | Value           |
+| -------------- | --------------- |
+| **Auth**       | No              |
+| **Rate Limit** | 20 req / 15 min |
 
-Request:
+**Request Body:**
 
 ```json
 {
@@ -311,7 +340,7 @@ Request:
 }
 ```
 
-Success: `201 Created`
+**Success — 201:**
 
 ```json
 {
@@ -326,18 +355,20 @@ Success: `201 Created`
 }
 ```
 
-Common errors:
+**Errors:** `400` (validation), `409` (email exists)
 
-- `400` validation failure
-- `409` email already exists
+---
 
 #### `POST /api/auth/login`
 
-Authenticate a user and return an access token.
+Authenticate and receive an access token.
 
-Auth: No
+| Detail         | Value          |
+| -------------- | -------------- |
+| **Auth**       | No             |
+| **Rate Limit** | 5 req / 15 min |
 
-Request:
+**Request Body:**
 
 ```json
 {
@@ -346,14 +377,14 @@ Request:
 }
 ```
 
-Success: `200 OK`
+**Success — 200:**
 
 ```json
 {
   "success": true,
   "message": "Login successful",
   "data": {
-    "accessToken": "<jwt-token>",
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
     "user": {
       "id": "6610d9bc1d9cb39ef0f09521",
       "name": "Muhammad Umar",
@@ -364,61 +395,35 @@ Success: `200 OK`
 }
 ```
 
-Common errors:
+**Errors:** `400` (validation), `401` (invalid credentials)
 
-- `400` validation failure
-- `401` invalid credentials
+---
 
-#### `POST /api/auth/admin-create`
-
-Create a new admin account from the auth namespace.
-
-Auth: `ADMIN`
-
-Request:
-
-```json
-{
-  "name": "Ops Admin",
-  "email": "ops-admin@example.com",
-  "password": "StrongAdminPass123"
-}
-```
-
-Success: `201 Created`
-
-Common errors:
-
-- `401` missing or invalid token
-- `403` non-admin caller
-- `409` email already exists
-
-### Product APIs
+### Products
 
 #### `GET /api/products`
 
-Return paginated products with filtering and sorting support.
+List products with filtering, sorting, and pagination.
 
-Auth: No
+| Detail         | Value                 |
+| -------------- | --------------------- |
+| **Auth**       | No                    |
+| **Rate Limit** | 90 req / min (global) |
 
-Query params:
+**Query Parameters:**
 
-- `search`
-- `category`
-- `minPrice`
-- `maxPrice`
-- `rating`
-- `sort`
-- `page`
-- `limit`
+| Param      | Type   | Description                            |
+| ---------- | ------ | -------------------------------------- |
+| `search`   | string | Search name and description            |
+| `category` | string | Filter by category                     |
+| `minPrice` | number | Minimum price                          |
+| `maxPrice` | number | Maximum price                          |
+| `rating`   | number | Minimum rating                         |
+| `sort`     | string | Sort field (`-` for desc)              |
+| `page`     | number | Page number (default: 1)               |
+| `limit`    | number | Items per page (default: 10, max: 100) |
 
-Example:
-
-```http
-GET /api/products?search=iphone&category=electronics&minPrice=100&maxPrice=2500&sort=-createdAt&page=1&limit=12
-```
-
-Success: `200 OK`
+**Success — 200:**
 
 ```json
 {
@@ -431,59 +436,58 @@ Success: `200 OK`
 }
 ```
 
+---
+
 #### `GET /api/products/:id`
 
-Return a single product by MongoDB ObjectId.
+Get a single product by ID.
 
-Auth: No
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | No    |
 
-Common errors:
+**Errors:** `400` (invalid ID), `404` (not found)
 
-- `400` invalid ID
-- `404` product not found
+---
 
 #### `POST /api/products`
 
-Create a product with multipart form-data.
+Create a product with images.
 
-Auth: `ADMIN`
+| Detail           | Value                 |
+| ---------------- | --------------------- |
+| **Auth**         | Admin only            |
+| **Content-Type** | `multipart/form-data` |
 
-Content-Type:
+**Fields:** `name`, `description`, `price`, `category`, `stock`, `image` (up to 5 files)
 
-```text
-multipart/form-data
-```
+**Success — 201**
 
-Fields:
+**Errors:** `401` (no token), `403` (not admin), `400` (validation)
 
-- `name`
-- `description`
-- `price`
-- `category`
-- `stock`
-- `image` up to 5 files
-
-Success: `201 Created`
+---
 
 #### `PUT /api/products/:id`
 
-Update a product and optionally replace images.
+Update a product, optionally replacing images.
 
-Auth: `ADMIN`
+| Detail   | Value      |
+| -------- | ---------- |
+| **Auth** | Admin only |
 
-Common errors:
+**Errors:** `400` (validation/invalid ID), `403` (not admin), `404` (not found)
 
-- `400` invalid payload
-- `400` invalid product ID
-- `404` product not found
+---
 
 #### `DELETE /api/products/:id`
 
 Delete a product.
 
-Auth: `ADMIN`
+| Detail   | Value      |
+| -------- | ---------- |
+| **Auth** | Admin only |
 
-Success:
+**Success:**
 
 ```json
 {
@@ -492,15 +496,21 @@ Success:
 }
 ```
 
-### Cart APIs
+---
 
-All cart routes require a bearer token.
+### Cart
+
+All cart routes require authentication.
 
 #### `POST /api/cart`
 
-Add a product to the authenticated user's cart.
+Add a product to the cart.
 
-Request:
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+**Request Body:**
 
 ```json
 {
@@ -509,21 +519,31 @@ Request:
 }
 ```
 
-Common errors:
+**Success — 201**
 
-- `400` invalid quantity
-- `400` invalid product ID
-- `404` product not found
+**Errors:** `400` (invalid quantity/product ID), `404` (product not found)
+
+---
 
 #### `GET /api/cart`
 
-Return the authenticated user's cart.
+Get the current user's cart.
+
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+---
 
 #### `PUT /api/cart/:productId`
 
-Update quantity for a single cart item.
+Update a cart item's quantity.
 
-Request:
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+**Request Body:**
 
 ```json
 {
@@ -531,15 +551,27 @@ Request:
 }
 ```
 
+---
+
 #### `DELETE /api/cart/:productId`
 
-Remove one item from the cart.
+Remove an item from the cart.
 
-#### `DELETE /api/cart`
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
 
-Clear the entire cart.
+---
 
-Success:
+#### `DELETE /api/cart/clear`
+
+Clear all items from the cart.
+
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+**Success:**
 
 ```json
 {
@@ -552,15 +584,21 @@ Success:
 }
 ```
 
-### Order APIs
+---
 
-All order routes require a bearer token.
+### Orders
+
+All order routes require authentication.
 
 #### `POST /api/orders`
 
-Create an order from the authenticated user's cart.
+Create an order from the current cart.
 
-Request:
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+**Request Body:**
 
 ```json
 {
@@ -573,37 +611,56 @@ Request:
 }
 ```
 
-Success: `201 Created`
+**Success — 201**
 
-Common errors:
+**Errors:** `400` (empty cart, insufficient stock, validation)
 
-- `400` validation failure
-- `400` cart is empty
-- `400` insufficient stock
+---
 
 #### `GET /api/orders/my`
 
-Return the current user's order history.
+Get the current user's order history.
+
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+---
 
 #### `GET /api/orders/:id`
 
-Return a single order if the requester is the owner or an admin.
+Get a single order (owner or admin only).
 
-Common errors:
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
 
-- `400` invalid order ID
-- `403` forbidden
-- `404` order not found
+**Errors:** `400` (invalid ID), `403` (forbidden), `404` (not found)
 
-### Payment APIs
+---
+
+#### `POST /api/orders/:id/cancel`
+
+Cancel an unpaid pending order and restore stock.
+
+| Detail   | Value |
+| -------- | ----- |
+| **Auth** | Yes   |
+
+---
+
+### Payments
 
 #### `POST /api/payment/checkout`
 
 Create a Stripe Checkout session for an unpaid order.
 
-Auth: Yes
+| Detail         | Value           |
+| -------------- | --------------- |
+| **Auth**       | Yes             |
+| **Rate Limit** | 10 req / 10 min |
 
-Request:
+**Request Body:**
 
 ```json
 {
@@ -611,7 +668,7 @@ Request:
 }
 ```
 
-Success:
+**Success — 200:**
 
 ```json
 {
@@ -621,27 +678,23 @@ Success:
 }
 ```
 
-Common errors:
+**Errors:** `400` (invalid ID, already paid, no items, cancelled, expired), `403` (forbidden), `404` (not found), `500` (Stripe misconfigured)
 
-- `400` invalid order ID
-- `400` order already paid
-- `400` order has no items
-- `403` forbidden
-- `404` order not found
-- `500` Stripe misconfiguration
+---
 
 #### `POST /api/payment/webhook/stripe`
 
-Stripe webhook endpoint for payment updates.
+Stripe webhook endpoint for payment confirmation.
 
-Auth: Stripe signature verification
+| Detail   | Value                 |
+| -------- | --------------------- |
+| **Auth** | Stripe signature only |
 
-Notes:
+**Note:** Expects raw request body. Must be publicly reachable in production.
 
-- This route expects raw request body parsing.
-- It must be publicly reachable in deployed environments.
+---
 
-### Admin APIs
+### Admin
 
 All admin routes require `ADMIN` role.
 
@@ -649,15 +702,32 @@ All admin routes require `ADMIN` role.
 
 Create an admin user.
 
+| Detail         | Value          |
+| -------------- | -------------- |
+| **Auth**       | Admin only     |
+| **Rate Limit** | 50 req / 5 min |
+
+---
+
 #### `GET /api/admin/users`
 
-Return all users.
+List all users.
+
+| Detail   | Value      |
+| -------- | ---------- |
+| **Auth** | Admin only |
+
+---
 
 #### `PATCH /api/admin/users/:id/role`
 
-Update another user's role.
+Change a user's role.
 
-Request:
+| Detail   | Value      |
+| -------- | ---------- |
+| **Auth** | Admin only |
+
+**Request Body:**
 
 ```json
 {
@@ -665,137 +735,223 @@ Request:
 }
 ```
 
+**Errors:** `400` (self-change attempt, invalid role), `404` (user not found)
+
+---
+
 #### `PATCH /api/admin/users/:id/deactivate`
 
 Deactivate a user account.
 
-## Error Handling
+| Detail   | Value      |
+| -------- | ---------- |
+| **Auth** | Admin only |
 
-The API uses centralized error middleware to normalize validation, JWT, Mongoose, Multer, and domain-level errors.
+**Errors:** `400` (already inactive), `404` (user not found)
 
-Standard error response:
+---
+
+## 🔑 Authentication Flow
+
+1. **Register** — `POST /api/auth/register` creates a user account.
+2. **Login** — `POST /api/auth/login` returns an `accessToken` (JWT).
+3. **Attach Token** — Include in every protected request:
+   ```http
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+   ```
+4. **Verification** — The `authMiddleware` verifies the token, checks the user is active, and attaches `{ userId, role }` to `req.user`.
+5. **Expiry** — Tokens expire after the configured `JWT_EXPIRES_IN` (default: 1 hour). On expiry, the user must log in again.
+
+---
+
+## ⚠️ Error Handling
+
+All errors follow a consistent response shape:
 
 ```json
 {
   "success": false,
   "message": "Validation failed",
   "statusCode": 400,
-  "details": [
-    "email must be a valid email"
-  ],
+  "details": ["email must be a valid email"],
   "stack": null
 }
 ```
 
-Notes:
+- `stack` is only included in `development` mode.
+- `details` is an array when available (validation errors) or `null`.
 
-- `stack` is included only in development mode
-- validation details are returned as an array when available
-- domain errors use the shared `AppError` utility
+### Common Error Codes
 
-## Security Notes
+| Code | Meaning                        |
+| ---- | ------------------------------ |
+| 400  | Bad request / validation error |
+| 401  | Not authenticated              |
+| 403  | Not authorized                 |
+| 404  | Resource not found             |
+| 409  | Conflict (duplicate email)     |
+| 429  | Rate limit exceeded            |
+| 500  | Internal server error          |
+| 503  | Service unavailable            |
 
-Implemented:
+---
 
-- Password hashing with bcrypt
-- JWT verification and expiration handling
-- Role-based route protection
-- `helmet` security headers
-- CORS allowlist support
-- Redis-backed rate limiting
-- ObjectId validation on sensitive lookups
-- Upload MIME-type and file-size restrictions
-
-Important operational note:
-
-- Secrets must never be committed to source control
-- Rotate any credentials that were exposed during development
-
-## Testing
-
-Run tests:
+## 🧪 Testing
 
 ```bash
+# Run all tests
 yarn test
+
+# Or with npm
+npm test
 ```
 
-Current automated coverage includes:
+### What's Covered
 
 - Auth service unit tests
-- Route-level API tests for auth, products, cart, orders, payments, and admin routes
+- Route-level API tests for all resources
+- Status code verification
+- Validation error handling
+- Authentication and authorization checks
 
-Current test files:
+### Coverage Report
 
-```text
-tests/auth.service.unit.test.js
-tests/routes/auth.routes.test.js
-tests/routes/product.routes.test.js
-tests/routes/cart.routes.test.js
-tests/routes/order.routes.test.js
-tests/routes/payment.routes.test.js
-tests/routes/admin.routes.test.js
+```bash
+yarn test --coverage
 ```
 
-Notes:
+---
 
-- Route tests use Supertest with mocked dependencies to validate request handling and status codes
-- Full database-backed integration coverage is still a future improvement
+## 🚢 Deployment
 
-## Deployment
+### Vercel Deployment
 
-The repository includes Vercel routing via `vercel.json` and a serverless entrypoint in `api/index.js`.
+1. **Push to GitHub:**
 
-### Vercel Notes
+   ```bash
+   git push origin main
+   ```
 
-- `api/index.js` bootstraps the Express app for Vercel
-- `vercel.json` routes all traffic to the serverless handler
-- Mongo connection reuse is implemented to reduce serverless reconnect overhead
+2. **Connect to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Set environment variables (see below)
+   - Deploy
 
-### Recommended Production Environment Variables
+3. **Vercel Config:**
+   - `vercel.json` routes all requests to `api/index.js`
+   - MongoDB connection is cached across serverless invocations
 
-- `NODE_ENV=production`
-- `MONGO_URI`
-- `JWT_SECRET`
-- `CLIENT_URL`
-- `CORS_ORIGINS`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
+### Required Production Environment Variables
+
+| Variable                   | Why Needed                     |
+| -------------------------- | ------------------------------ |
+| `NODE_ENV`                 | Set to `production`            |
+| `MONGO_URI`                | Database connection            |
+| `JWT_SECRET`               | Token signing                  |
+| `CLIENT_URL`               | Stripe redirect URLs           |
+| `CORS_ORIGINS`             | Allowed frontend origins       |
+| `STRIPE_SECRET_KEY`        | Payment processing             |
+| `STRIPE_WEBHOOK_SECRET`    | Webhook signature verification |
+| `CLOUDINARY_CLOUD_NAME`    | Image uploads                  |
+| `CLOUDINARY_API_KEY`       | Image uploads                  |
+| `CLOUDINARY_API_SECRET`    | Image uploads                  |
+| `UPSTASH_REDIS_REST_URL`   | Caching and rate limiting      |
+| `UPSTASH_REDIS_REST_TOKEN` | Caching and rate limiting      |
 
 ### Deployment Checklist
 
-1. Provision MongoDB
-2. Provision Redis or set `DISABLE_REDIS=true` for limited environments
-3. Configure Stripe webhook endpoint
-4. Configure Cloudinary credentials
-5. Set production CORS origins
-6. Set a strong JWT secret
-7. Verify webhook reachability
-8. Enable HTTPS
+- [ ] MongoDB Atlas cluster provisioned and whitelisted
+- [ ] Strong `JWT_SECRET` generated (use `openssl rand -base64 32`)
+- [ ] Stripe live keys configured
+- [ ] Stripe webhook endpoint registered and URL set in Stripe dashboard
+- [ ] Cloudinary production credentials configured
+- [ ] CORS origins set to production frontend URL(s)
+- [ ] Redis provisioned on Upstash (or `DISABLE_REDIS=true` set)
+- [ ] HTTPS enabled on all endpoints
+- [ ] Health check endpoint verified (`GET /`)
+- [ ] Webhook reachability confirmed (test with Stripe CLI)
 
-## Known Limitations
+---
 
-- Order creation currently deducts stock before payment is completed
-- Validation is strong for request bodies, but query and params validation is still lighter than ideal
-- The project uses service-to-model access directly instead of a repository abstraction
-- API response shapes are mostly consistent, but some success payloads use domain keys instead of a single universal `data` wrapper
+## ⚠️ Known Limitations
 
-## Future Improvements
+| Limitation                                      | Impact                                        | Planned Fix                       |
+| ----------------------------------------------- | --------------------------------------------- | --------------------------------- |
+| Stock is deducted at order time, before payment | Abandoned orders reduce available stock       | Add cron job to expire old orders |
+| No refresh token mechanism                      | Users must re-login after token expiry        | Implement refresh token flow      |
+| No token revocation                             | Stolen tokens are valid until expiry          | Add token blocklist in Redis      |
+| Product endpoints return `{ product }` key      | Inconsistent with other endpoints' `{ data }` | Standardize response shape        |
+| Populate inside MongoDB transactions            | May not fully work in all MongoDB versions    | Use manual population             |
+| No structured logging                           | Console logs are hard to query in production  | Integrate Pino or Winston         |
+| No OpenAPI/Swagger documentation                | Manual API exploration required               | Add swagger-ui-express            |
 
-- Add repository layer for stricter separation of concerns
-- Add database-backed integration tests
-- Add refresh tokens and token revocation
-- Add OpenAPI or Swagger documentation
-- Add audit logs for admin actions
-- Add structured logging, metrics, and tracing
-- Improve payment reconciliation and webhook idempotency
+---
 
-## Author
+## 🗺️ Roadmap
+
+| Feature                          | Priority | Status     |
+| -------------------------------- | -------- | ---------- |
+| Repository layer for DB access   | High     | 📋 Planned |
+| Refresh token + token revocation | High     | 📋 Planned |
+| Integration tests with real DB   | High     | 📋 Planned |
+| Stripe webhook idempotency       | High     | ✅ Done    |
+| Structured logging (Pino)        | Medium   | 📋 Planned |
+| OpenAPI/Swagger documentation    | Medium   | 📋 Planned |
+| Audit log for admin actions      | Medium   | 📋 Planned |
+| Product reviews and ratings      | Medium   | 📋 Planned |
+| Order shipping workflow          | Low      | 📋 Planned |
+| Wishlist feature                 | Low      | 📋 Planned |
+| Email notifications              | Low      | 📋 Planned |
+| GraphQL API layer                | Low      | 📋 Planned |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how:
+
+1. **Fork** the repository
+2. **Create a branch** for your feature:
+   ```bash
+   git checkout -b feature/add-wishlist
+   ```
+3. **Make your changes** and ensure tests pass:
+   ```bash
+   yarn test
+   ```
+4. **Commit** with clear, descriptive messages:
+   ```bash
+   git commit -m "feat: add wishlist CRUD endpoints"
+   ```
+5. **Push** and **open a Pull Request**:
+   ```bash
+   git push origin feature/add-wishlist
+   ```
+
+### Guidelines
+
+- Follow the existing folder structure and naming conventions
+- Write tests for new features
+- Keep functions focused (single responsibility)
+- Document new environment variables
+- Update the README if you add or change endpoints
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## 👤 Author
 
 **Muhammad Umar**
 
-This project demonstrates practical backend experience with authentication, role-based access control, caching, rate limiting, third-party integrations, and modular API design.
+- GitHub: [@muhammadumar-codes](https://github.com/muhammadumar-codes)
+- LinkedIn: [Muhammad Umar](https://www.linkedin.com/in/muhammad-umar-codes/)
+
+---
+
+<p align="center">If this project helped you, consider giving it a ⭐ on GitHub!</p>

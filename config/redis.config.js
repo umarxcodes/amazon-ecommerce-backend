@@ -19,5 +19,4 @@ export const ensureRedisConnection = async () => {
 
 export const isRedisAvailable = () => Boolean(redis)
 
-/* =====*** EXPORT ***===== */
 export default redis

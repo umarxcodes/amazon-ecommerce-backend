@@ -1,10 +1,3 @@
-/*
-📁 FILE: product.service.js
-📌 PURPOSE: Encapsulates catalog business logic including product CRUD,
-filtering, pagination, sorting, and cache invalidation.
-========================================
-*/
-
 import mongoose from 'mongoose'
 import Product from '../models/product.model.js'
 import {
@@ -17,8 +10,6 @@ import { createAppError } from '../utils/app-error.util.js'
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/* ===== CREATE PRODUCT FUNCTION ===== */
-/* Persists a new product and invalidates cached catalog listings. */
 export const createProduct = async ({ body, files }) => {
   const images = files?.map((file) => file.path) || []
 
@@ -36,8 +27,6 @@ export const createProduct = async ({ body, files }) => {
   }
 }
 
-/* ===== GET PRODUCTS FUNCTION ===== */
-/* Builds catalog filters from query params and serves cached responses when possible. */
 export const getProducts = async (queryParams) => {
   const cacheVersion = await getProductCacheVersion()
   const cacheKey = `products:${cacheVersion}:${JSON.stringify(queryParams)}`
@@ -115,8 +104,6 @@ export const getProducts = async (queryParams) => {
   return response
 }
 
-/* ===== GET PRODUCT BY ID FUNCTION ===== */
-/* Validates the product ID and returns a single catalog item. */
 export const getProductById = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw createAppError('Invalid product ID', 400)
@@ -133,8 +120,6 @@ export const getProductById = async (id) => {
   }
 }
 
-/* ===== UPDATE PRODUCT FUNCTION ===== */
-/* Applies allowed product updates and refreshes the catalog cache. */
 export const updateProduct = async ({ productId, body, files }) => {
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     throw createAppError('Invalid product ID', 400)
@@ -166,8 +151,6 @@ export const updateProduct = async ({ productId, body, files }) => {
   }
 }
 
-/* ===== DELETE PRODUCT FUNCTION ===== */
-/* Removes a product and invalidates catalog cache keys. */
 export const deleteProduct = async (productId) => {
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     throw createAppError('Invalid product ID', 400)

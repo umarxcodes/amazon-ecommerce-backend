@@ -36,7 +36,6 @@ const incrementSlidingWindowCounter = async ({ key, windowMs }) => {
     redis.get(previousWindowKey),
   ])
 
-  // Keep two windows to support weighted sliding calculations.
   await redis.pexpire(currentWindowKey, windowMs * 2)
 
   const currentCount = Number(currentCountRaw || 0)
@@ -55,7 +54,6 @@ const incrementSlidingWindowCounter = async ({ key, windowMs }) => {
 
 const incrementCounter = async (config) => {
   if (!redis) {
-    // Redis not configured - degrade gracefully by allowing the request
     return { current: 0, resetAt: Date.now() + config.windowMs }
   }
 

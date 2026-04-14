@@ -1,4 +1,3 @@
-// =====*** Connect to MongoDB ***=====
 import mongoose from 'mongoose'
 import { env } from './env.config.js'
 
@@ -21,16 +20,12 @@ const connectDB = async () => {
 
     const conn = await cachedConnectionPromise
 
-    console.log(
-      `=====*** MongoDB Connected Successfully  ${conn.connection.host} ***=====`
-    )
+    console.log(`MongoDB connected: ${conn.connection.host}`)
 
     return conn
   } catch (error) {
     cachedConnectionPromise = null
-    console.error(
-      `=====*** MongoDB Connection Error: ${error.message} ***=====`
-    )
+    console.error(`MongoDB Connection Error: ${error.message}`)
     throw error
   }
 }

@@ -1,10 +1,3 @@
-/*
-📁 FILE: admin.routes.js
-📌 PURPOSE: Declares administrator-only user-management endpoints and applies
-the shared auth, admin, validation, and rate-limit middleware chain.
-========================================
-*/
-
 import express from 'express'
 import adminController from '../controllers/admin.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
@@ -18,10 +11,6 @@ import {
 
 const router = express.Router()
 
-/* ===== ADMIN ROUTES ===== */
-/* Every route in this file requires both authentication and admin access. */
-
-// Create new admin
 router.post(
   '/create-admin',
   authMiddleware,
@@ -31,7 +20,6 @@ router.post(
   adminController.createAdmin
 )
 
-// Get all users
 router.get(
   '/users',
   authMiddleware,
@@ -40,7 +28,6 @@ router.get(
   adminController.getAllUsers
 )
 
-// Change user role
 router.patch(
   '/users/:id/role',
   authMiddleware,
@@ -50,7 +37,6 @@ router.patch(
   adminController.changeUserRole
 )
 
-// Deactivate user
 router.patch(
   '/users/:id/deactivate',
   authMiddleware,

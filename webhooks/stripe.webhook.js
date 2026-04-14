@@ -24,13 +24,18 @@ const stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`)
   }
 
-  /* ===== HANDLE EVENT ===== */
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
       const orderId = session.metadata?.orderId
 
       if (orderId) {
+        const existingOrder = await Order.findById(orderId)
+
+        if (existingOrder?.paymentResult?.sessionId === session.id) {
+          return res.status(200).json({ received: true })
+        }
+
         await Order.findOneAndUpdate(
           { _id: orderId, isPaid: false, status: 'pending' },
           {

@@ -1,23 +1,12 @@
-/*
-📁 FILE: admin.service.js
-📌 PURPOSE: Implements privileged user-administration workflows such as admin
-creation, user listing, role changes, and deactivation.
-========================================
-*/
-
 import mongoose from 'mongoose'
 import User from '../models/user.model.js'
 import { createAdminUser } from './auth.service.js'
 import { createAppError } from '../utils/app-error.util.js'
 
-/* ===== CREATE ADMIN FUNCTION ===== */
-/* Reuses the auth service to create a new administrator account. */
 export const createAdmin = async (payload) => {
   return createAdminUser(payload)
 }
 
-/* ===== GET ALL USERS FUNCTION ===== */
-/* Returns the full user list for administrative review. */
 export const getAllUsers = async () => {
   const users = await User.find().select('-password')
 
@@ -28,8 +17,6 @@ export const getAllUsers = async () => {
   }
 }
 
-/* ===== CHANGE USER ROLE FUNCTION ===== */
-/* Updates a target user's role while preventing self-role changes. */
 export const changeUserRole = async ({ actorUserId, targetUserId, role }) => {
   if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
     throw createAppError('Invalid user ID', 400)
@@ -37,6 +24,11 @@ export const changeUserRole = async ({ actorUserId, targetUserId, role }) => {
 
   if (actorUserId === targetUserId) {
     throw createAppError('You cannot change your own role', 400)
+  }
+
+  const allowedRoles = ['USER', 'ADMIN']
+  if (!allowedRoles.includes(role)) {
+    throw createAppError('Invalid role', 400)
   }
 
   const user = await User.findByIdAndUpdate(
@@ -56,8 +48,6 @@ export const changeUserRole = async ({ actorUserId, targetUserId, role }) => {
   }
 }
 
-/* ===== DEACTIVATE USER FUNCTION ===== */
-/* Soft-disables an active user account. */
 export const deactivateUser = async (targetUserId) => {
   if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
     throw createAppError('Invalid user ID', 400)

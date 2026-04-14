@@ -2,10 +2,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const requiredEnvKeys = [
-  'MONGO_URI',
-  'JWT_SECRET',
-]
+const requiredEnvKeys = ['MONGO_URI', 'JWT_SECRET']
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -30,12 +27,16 @@ export const validateEnv = () => {
   const missing = requiredEnvKeys.filter((key) => !process.env[key])
 
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`)
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}`
+    )
   }
 }
 
 export const isStripeConfigured = () => {
-  return Boolean(env.clientUrl && env.stripeSecretKey && env.stripeWebhookSecret)
+  return Boolean(
+    env.clientUrl && env.stripeSecretKey && env.stripeWebhookSecret
+  )
 }
 
 export const isRedisConfigured = () => {

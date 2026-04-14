@@ -1,9 +1,3 @@
-/*
-
-========================================
-*/
-
-/* ===== CUSTOM ERROR CLASS ===== */
 export class AppError extends Error {
   constructor(message, statusCode = 500, details = null) {
     super(message)
@@ -15,7 +9,6 @@ export class AppError extends Error {
   }
 }
 
-/* ===== APP ERROR FACTORY ===== */
 export const createAppError = (message, statusCode = 500, details = null) => {
   return new AppError(message, statusCode, details)
 }

@@ -4,7 +4,6 @@ import cloudinary from '../config/cloudinary.config.js'
 import { isCloudinaryConfigured } from '../config/env.config.js'
 import { createAppError } from '../utils/app-error.util.js'
 
-// ===== CLOUDINARY STORAGE CONFIG =====
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
@@ -12,12 +11,11 @@ const storage = new CloudinaryStorage({
       folder: 'products',
       allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
       transformation: [{ width: 800, crop: 'scale' }],
-      public_id: `product_${Date.now()}`, // unique name
+      public_id: `product_${Date.now()}`,
     }
   },
 })
 
-// ===== FILE FILTER (SECURITY) =====
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
 
@@ -28,12 +26,11 @@ const fileFilter = (req, file, cb) => {
   }
 }
 
-// ===== MULTER SETUP =====
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
+    fileSize: 2 * 1024 * 1024,
   },
 })
 

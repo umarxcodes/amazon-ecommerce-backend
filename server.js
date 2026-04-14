@@ -3,17 +3,13 @@ import connectDB from './config/db.config.js'
 import { env, validateEnv } from './config/env.config.js'
 import { ensureRedisConnection } from './config/redis.config.js'
 
-/* ===== SERVER STARTUP FUNCTION ===== */
-/* Initializes required infrastructure and starts the Express server. */
 const startServer = async () => {
   validateEnv()
   await connectDB()
   await ensureRedisConnection()
 
   const server = app.listen(env.port, () => {
-    console.info(
-      `[${new Date().toDateString()}] Server is Running on port ${env.port}`
-    )
+    console.info(`Server running on port ${env.port}`)
   })
 
   const shutdown = async (signal) => {
@@ -26,6 +22,6 @@ const startServer = async () => {
 }
 
 startServer().catch((error) => {
-  console.error(`=====*** Server Startup Error: ${error.message} ***=====`)
+  console.error(`Server Startup Error: ${error.message}`)
   process.exit(1)
 })

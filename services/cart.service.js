@@ -1,10 +1,3 @@
-/*
-📁 FILE: cart.service.js
-📌 PURPOSE: Implements cart business rules such as stock validation,
-price snapshots, totals, caching, and cart mutations.
-========================================
-*/
-
 import mongoose from 'mongoose'
 import Cart from '../models/cart.model.js'
 import Product from '../models/product.model.js'
@@ -16,8 +9,6 @@ import {
 } from './cache.service.js'
 import { createAppError } from '../utils/app-error.util.js'
 
-/* ===== CART HELPER FUNCTIONS ===== */
-/* Shared helpers keep cart calculations and lookups consistent. */
 const calculateTotal = (cart) => {
   return cart.items.reduce((acc, item) => acc + item.quantity * item.price, 0)
 }
@@ -38,8 +29,6 @@ const getCartDocument = async (userId) => {
   return cart
 }
 
-/* ===== ADD TO CART FUNCTION ===== */
-/* Adds or increments a cart item while enforcing current stock constraints. */
 export const addToCart = async ({ userId, productId, quantity }) => {
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     throw createAppError('Invalid product ID', 400)
@@ -100,8 +89,6 @@ export const addToCart = async ({ userId, productId, quantity }) => {
   }
 }
 
-/* ===== GET CART FUNCTION ===== */
-/* Retrieves the user's cart from cache first, then falls back to MongoDB. */
 export const getCart = async (userId) => {
   const cacheKey = getCartCacheKey(userId)
   const cachedCart = await getCachedValue(cacheKey)
@@ -113,7 +100,9 @@ export const getCart = async (userId) => {
     }
   }
 
-  const cart = await Cart.findOne({ user: userId }).populate('items.product').lean()
+  const cart = await Cart.findOne({ user: userId })
+    .populate('items.product')
+    .lean()
 
   if (!cart) {
     const emptyCart = { items: [], totalPrice: 0 }
@@ -133,8 +122,6 @@ export const getCart = async (userId) => {
   }
 }
 
-/* ===== UPDATE CART ITEM FUNCTION ===== */
-/* Replaces a cart item's quantity after validating stock and ownership. */
 export const updateCartItem = async ({ userId, productId, quantity }) => {
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     throw createAppError('Invalid product ID', 400)
@@ -146,7 +133,9 @@ export const updateCartItem = async ({ userId, productId, quantity }) => {
   }
 
   const cart = await getCartDocument(userId)
-  const item = cart.items.find((entry) => entry.product.toString() === productId)
+  const item = cart.items.find(
+    (entry) => entry.product.toString() === productId
+  )
 
   if (!item) {
     throw createAppError('Item not found in cart', 404)
@@ -158,7 +147,10 @@ export const updateCartItem = async ({ userId, productId, quantity }) => {
   }
 
   if (qty > product.stock) {
-    throw createAppError(`Only ${product.stock} item(s) available in stock`, 400)
+    throw createAppError(
+      `Only ${product.stock} item(s) available in stock`,
+      400
+    )
   }
 
   item.quantity = qty
@@ -173,8 +165,6 @@ export const updateCartItem = async ({ userId, productId, quantity }) => {
   }
 }
 
-/* ===== REMOVE FROM CART FUNCTION ===== */
-/* Deletes a single cart line item and recalculates totals. */
 export const removeFromCart = async ({ userId, productId }) => {
   if (!mongoose.Types.ObjectId.isValid(productId)) {
     throw createAppError('Invalid product ID', 400)
@@ -182,7 +172,9 @@ export const removeFromCart = async ({ userId, productId }) => {
 
   const cart = await getCartDocument(userId)
   const initialItemsCount = cart.items.length
-  cart.items = cart.items.filter((item) => item.product.toString() !== productId)
+  cart.items = cart.items.filter(
+    (item) => item.product.toString() !== productId
+  )
 
   if (cart.items.length === initialItemsCount) {
     throw createAppError('Item not found in cart', 404)
@@ -199,8 +191,6 @@ export const removeFromCart = async ({ userId, productId }) => {
   }
 }
 
-/* ===== CLEAR CART FUNCTION ===== */
-/* Removes all cart items and resets the total price. */
 export const clearCart = async (userId) => {
   const cart = await getCartDocument(userId)
   cart.items = []

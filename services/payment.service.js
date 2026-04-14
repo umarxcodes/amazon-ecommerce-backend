@@ -1,16 +1,49 @@
-/*
-📁 FILE: payment.service.js
-📌 PURPOSE: Builds Stripe checkout sessions from internal order data while
-ensuring required payment configuration is present.
-========================================
-*/
-
+import mongoose from 'mongoose'
 import stripe from '../config/stripe.config.js'
+import Order from '../models/order.model.js'
 import { env, isStripeConfigured } from '../config/env.config.js'
 import { createAppError } from '../utils/app-error.util.js'
 
-/* ===== CREATE CHECKOUT SESSION FUNCTION ===== */
-/* Maps order items to Stripe line items and creates a hosted checkout session. */
+export const validateOrderForCheckout = async (orderId, user) => {
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw createAppError('Invalid order ID', 400)
+  }
+
+  const order = await Order.findById(orderId).populate('user', 'email')
+
+  if (!order) {
+    throw createAppError('Order not found', 404)
+  }
+
+  const isOwner = order.user._id.toString() === user.userId
+  const isAdmin = user.role === 'ADMIN'
+
+  if (!isOwner && !isAdmin) {
+    throw createAppError(
+      'Not authorized to create checkout for this order',
+      403
+    )
+  }
+
+  if (!order.items.length) {
+    throw createAppError('Order has no items', 400)
+  }
+
+  if (order.isPaid) {
+    throw createAppError('Order already paid', 400)
+  }
+
+  if (order.status === 'cancelled') {
+    throw createAppError('Order has been cancelled', 400)
+  }
+
+  if (order.expiresAt && order.expiresAt < new Date()) {
+    throw createAppError('Order has expired. Please create a new order.', 400)
+  }
+
+  return order
+}
+
 export const createCheckoutSession = async ({ order, customerEmail }) => {
   if (!isStripeConfigured() || !stripe) {
     throw createAppError(

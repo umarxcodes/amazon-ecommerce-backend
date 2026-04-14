@@ -19,7 +19,10 @@ export const applyAppSecurity = (app) => {
 
   if (env.trustProxy !== 'false') {
     const proxyValue = Number(env.trustProxy)
-    app.set('trust proxy', Number.isNaN(proxyValue) ? env.trustProxy : proxyValue)
+    app.set(
+      'trust proxy',
+      Number.isNaN(proxyValue) ? env.trustProxy : proxyValue
+    )
   }
 
   app.use(
