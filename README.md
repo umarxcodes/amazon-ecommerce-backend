@@ -35,6 +35,8 @@ Designed for developers who need a solid, scalable foundation for building ecomm
 - Sorting by price, creation date, or ratings
 - Redis-backed cache invalidation on product mutations
 - Cloudinary image uploads (up to 5 images per product)
+- Enforced category enum validation
+- Support for `listPrice` (original price) and `prime` eligibility
 
 ### 🛒 Shopping Cart
 
@@ -43,6 +45,7 @@ Designed for developers who need a solid, scalable foundation for building ecomm
 - Price snapshots at time of adding (immune to price changes)
 - Redis cache for fast cart retrieval
 - Increment, decrement, remove, and clear operations
+- Confirmation modal on frontend for delete actions
 
 ### 📦 Orders
 
@@ -459,7 +462,34 @@ Create a product with images.
 | **Auth**         | Admin only            |
 | **Content-Type** | `multipart/form-data` |
 
-**Fields:** `name`, `description`, `price`, `category`, `stock`, `image` (up to 5 files)
+**Fields:** `name`, `description`, `price`, `listPrice`, `category`, `stock`, `prime`, `image` (up to 5 files)
+
+| Field         | Type    | Required | Description                                       |
+| ------------- | ------- | -------- | ------------------------------------------------- |
+| `name`        | string  | Yes      | Product name                                      |
+| `description` | string  | Yes      | Detailed product description                      |
+| `price`       | number  | Yes      | Current selling price                             |
+| `listPrice`   | number  | No       | Original/list price (for discount display)        |
+| `category`    | string  | Yes      | Must be one of the allowed categories (see below) |
+| `stock`       | number  | No       | Available quantity (default: 0)                   |
+| `prime`       | boolean | No       | Eligible for Prime delivery (default: false)      |
+| `image`       | file    | No       | Upload up to 5 images (multipart/form-data)       |
+
+**Allowed Categories:**
+
+| Category                  |
+| ------------------------- |
+| `Electronics`             |
+| `Clothing`                |
+| `Home & Kitchen`          |
+| `Books`                   |
+| `Sports & Outdoors`       |
+| `Toys & Games`            |
+| `Health & Beauty`         |
+| `Automotive`              |
+| `Computers & Accessories` |
+| `Grocery & Gourmet`       |
+| `Gaming`                  |
 
 **Success — 201**
 
@@ -474,6 +504,8 @@ Update a product, optionally replacing images.
 | Detail   | Value      |
 | -------- | ---------- |
 | **Auth** | Admin only |
+
+**Updatable Fields:** `name`, `description`, `price`, `listPrice`, `category`, `stock`, `prime`, `images`
 
 **Errors:** `400` (validation/invalid ID), `403` (not admin), `404` (not found)
 
@@ -501,6 +533,11 @@ Delete a product.
 ### Cart
 
 All cart routes require authentication.
+
+| Detail         | Value                 |
+| -------------- | --------------------- |
+| **Auth**       | Yes (JWT required)    |
+| **Rate Limit** | 90 req / min (global) |
 
 #### `POST /api/cart`
 
@@ -589,6 +626,11 @@ Clear all items from the cart.
 ### Orders
 
 All order routes require authentication.
+
+| Detail         | Value                 |
+| -------------- | --------------------- |
+| **Auth**       | Yes (JWT required)    |
+| **Rate Limit** | 90 req / min (global) |
 
 #### `POST /api/orders`
 
@@ -697,6 +739,11 @@ Stripe webhook endpoint for payment confirmation.
 ### Admin
 
 All admin routes require `ADMIN` role.
+
+| Detail         | Value          |
+| -------------- | -------------- |
+| **Auth**       | Admin only     |
+| **Rate Limit** | 50 req / 5 min |
 
 #### `POST /api/admin/create-admin`
 
@@ -876,34 +923,13 @@ yarn test --coverage
 
 ## ⚠️ Known Limitations
 
-| Limitation                                      | Impact                                        | Planned Fix                       |
-| ----------------------------------------------- | --------------------------------------------- | --------------------------------- |
-| Stock is deducted at order time, before payment | Abandoned orders reduce available stock       | Add cron job to expire old orders |
-| No refresh token mechanism                      | Users must re-login after token expiry        | Implement refresh token flow      |
-| No token revocation                             | Stolen tokens are valid until expiry          | Add token blocklist in Redis      |
-| Product endpoints return `{ product }` key      | Inconsistent with other endpoints' `{ data }` | Standardize response shape        |
-| Populate inside MongoDB transactions            | May not fully work in all MongoDB versions    | Use manual population             |
-| No structured logging                           | Console logs are hard to query in production  | Integrate Pino or Winston         |
-| No OpenAPI/Swagger documentation                | Manual API exploration required               | Add swagger-ui-express            |
-
----
-
-## 🗺️ Roadmap
-
-| Feature                          | Priority | Status     |
-| -------------------------------- | -------- | ---------- |
-| Repository layer for DB access   | High     | 📋 Planned |
-| Refresh token + token revocation | High     | 📋 Planned |
-| Integration tests with real DB   | High     | 📋 Planned |
-| Stripe webhook idempotency       | High     | ✅ Done    |
-| Structured logging (Pino)        | Medium   | 📋 Planned |
-| OpenAPI/Swagger documentation    | Medium   | 📋 Planned |
-| Audit log for admin actions      | Medium   | 📋 Planned |
-| Product reviews and ratings      | Medium   | 📋 Planned |
-| Order shipping workflow          | Low      | 📋 Planned |
-| Wishlist feature                 | Low      | 📋 Planned |
-| Email notifications              | Low      | 📋 Planned |
-| GraphQL API layer                | Low      | 📋 Planned |
+| Limitation                                      | Impact                                       | Status                             |
+| ----------------------------------------------- | -------------------------------------------- | ---------------------------------- |
+| Stock is deducted at order time, before payment | Abandoned orders reduce available stock      | 30-min TTL for unpaid orders added |
+| No refresh token mechanism                      | Users must re-login after token expiry       | Planned                            |
+| No token revocation                             | Stolen tokens are valid until expiry         | Planned                            |
+| No structured logging                           | Console logs are hard to query in production | Planned                            |
+| No OpenAPI/Swagger documentation                | Manual API exploration required              | Planned                            |
 
 ---
 
