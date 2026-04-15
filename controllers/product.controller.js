@@ -8,6 +8,11 @@ import {
 import { asyncHandler } from '../utils/async-handler.util.js'
 
 const createProduct = asyncHandler(async (req, res) => {
+  console.log('=== CONTROLLER DEBUG ===')
+  console.log('req.body:', JSON.stringify(req.body, null, 2))
+  console.log('req.files:', req.files)
+  console.log('=== END CONTROLLER DEBUG ===')
+
   const response = await createProductService({
     body: req.body,
     files: req.files,

@@ -14,7 +14,7 @@ Designed for developers who need a solid, scalable foundation for building ecomm
 
 - **API Base URL:** `http://localhost:5000/api`
 - **Health Check:** `GET http://localhost:5000/`
-- **Deployed:** _[Add your deployment URL]_
+- **Deployed:** https://amazon-ecommerce-backend.vercel.app
 
 ## ✨ Features
 

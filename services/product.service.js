@@ -11,12 +11,24 @@ import { createAppError } from '../utils/app-error.util.js'
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const createProduct = async ({ body, files }) => {
-  const images = files?.map((file) => file.path) || []
+  const uploadedImages = files?.map((file) => file.path) || []
+  const bodyImages = Array.isArray(body.images) ? body.images : []
+  const images = uploadedImages.length ? uploadedImages : bodyImages
+
+  console.log('=== createProduct DEBUG ===')
+  console.log('files:', files)
+  console.log('body:', body)
+  console.log('uploadedImages:', uploadedImages)
+  console.log('bodyImages:', bodyImages)
+  console.log('final images:', images)
 
   const product = await Product.create({
     ...body,
     images,
   })
+
+  console.log('created product images:', product.images)
+  console.log('=== END DEBUG ===')
 
   await clearProductCache()
 
@@ -130,8 +142,13 @@ export const updateProduct = async ({ productId, body, files }) => {
     throw createAppError('Product not found', 404)
   }
 
-  if (files?.length) {
-    product.images = files.map((file) => file.path)
+  const uploadedImages = files?.map((file) => file.path) || []
+  const bodyImages = Array.isArray(body.images) ? body.images : []
+
+  if (uploadedImages.length) {
+    product.images = uploadedImages
+  } else if (bodyImages.length) {
+    product.images = bodyImages
   }
 
   const allowedUpdates = ['name', 'description', 'price', 'category', 'stock']
