@@ -151,7 +151,15 @@ export const updateProduct = async ({ productId, body, files }) => {
     product.images = bodyImages
   }
 
-  const allowedUpdates = ['name', 'description', 'price', 'category', 'stock']
+  const allowedUpdates = [
+    'name',
+    'description',
+    'price',
+    'category',
+    'stock',
+    'listPrice',
+    'prime',
+  ]
   allowedUpdates.forEach((field) => {
     if (body[field] !== undefined) {
       product[field] = body[field]

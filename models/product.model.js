@@ -51,6 +51,14 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    listPrice: {
+      type: Number,
+      min: [0, 'List price cannot be negative'],
+    },
+    prime: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
