@@ -1,5 +1,6 @@
 import helmet from 'helmet'
 import { env, getCorsOrigins } from '../config/env.config.js'
+import { createAppError } from '../utils/app-error.util.js'
 
 const allowedOrigins = new Set(getCorsOrigins())
 
@@ -9,7 +10,7 @@ export const corsOptions = {
       return callback(null, true)
     }
 
-    return callback(new Error('CORS origin not allowed'))
+    return callback(createAppError('CORS origin not allowed', 403))
   },
   credentials: true,
 }
