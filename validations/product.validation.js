@@ -13,7 +13,7 @@ export const productValidationSchema = yup.object({
   stock: yup.number().min(0).default(0),
   rating: yup.number().min(0).max(5),
   ratings: yup.number().min(0).max(5),
-  images: yup.array().of(yup.string().url()),
+  images: yup.array().of(yup.string().url()).optional(),
 })
 
 export const updateProductValidationSchema = yup.object({
