@@ -1,12 +1,16 @@
 import stripe from '../config/stripe.config.js'
 import Order from '../models/order.model.js'
-import { env, isStripeConfigured } from '../config/env.config.js'
+import {
+  env,
+  isStripeWebhookConfigured,
+} from '../config/env.config.js'
+import { markOrderPaidFromSession } from '../services/payment.service.js'
 
 const stripeWebhook = async (req, res) => {
-  if (!isStripeConfigured() || !stripe) {
+  if (!isStripeWebhookConfigured() || !stripe) {
     return res.status(500).json({
       success: false,
-      message: 'Stripe is not configured',
+      message: 'Stripe webhook is not configured',
     })
   }
 
@@ -36,23 +40,9 @@ const stripeWebhook = async (req, res) => {
           return res.status(200).json({ received: true })
         }
 
-        await Order.findOneAndUpdate(
-          { _id: orderId, isPaid: false, status: 'pending' },
-          {
-            $set: {
-              isPaid: true,
-              paidAt: new Date(),
-              status: 'paid',
-              paymentResult: {
-                id: session.payment_intent || '',
-                status: session.payment_status || 'paid',
-                emailAddress: session.customer_details?.email || '',
-                sessionId: session.id,
-                updatedAt: new Date(),
-              },
-            },
-          }
-        )
+        if (existingOrder && existingOrder.status !== 'cancelled') {
+          await markOrderPaidFromSession({ order: existingOrder, session })
+        }
       }
     }
   } catch (error) {

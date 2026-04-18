@@ -12,7 +12,11 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const createProduct = async ({ body, files }) => {
   const uploadedImages = files?.map((file) => file.path) || []
-  const bodyImages = Array.isArray(body.images) ? body.images : []
+  const bodyImages = Array.isArray(body.images)
+    ? body.images
+    : body.images
+      ? [body.images]
+      : []
   const images = uploadedImages.length ? uploadedImages : bodyImages
   const normalizedRating =
     body.ratings !== undefined ? body.ratings : body.rating
@@ -26,6 +30,7 @@ export const createProduct = async ({ body, files }) => {
 
   const productPayload = {
     ...body,
+    category: body.category?.trim(),
     images,
   }
 
@@ -153,7 +158,11 @@ export const updateProduct = async ({ productId, body, files }) => {
   }
 
   const uploadedImages = files?.map((file) => file.path) || []
-  const bodyImages = Array.isArray(body.images) ? body.images : []
+  const bodyImages = Array.isArray(body.images)
+    ? body.images
+    : body.images
+      ? [body.images]
+      : []
 
   if (uploadedImages.length) {
     product.images = uploadedImages
@@ -177,7 +186,10 @@ export const updateProduct = async ({ productId, body, files }) => {
   ]
   allowedUpdates.forEach((field) => {
     if (body[field] !== undefined) {
-      product[field] = body[field]
+      product[field] =
+        field === 'category' && typeof body[field] === 'string'
+          ? body[field].trim()
+          : body[field]
     }
   })
 

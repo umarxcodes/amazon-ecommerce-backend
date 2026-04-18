@@ -1,6 +1,7 @@
 import {
   validateOrderForCheckout,
   createCheckoutSession,
+  confirmCheckoutSession,
 } from '../services/payment.service.js'
 import { asyncHandler } from '../utils/async-handler.util.js'
 
@@ -21,6 +22,19 @@ const checkout = asyncHandler(async (req, res) => {
   })
 })
 
+const confirmCheckout = asyncHandler(async (req, res) => {
+  const { orderId, sessionId } = req.body
+
+  const response = await confirmCheckoutSession({
+    orderId,
+    sessionId,
+    user: req.user,
+  })
+
+  res.status(200).json(response)
+})
+
 export default {
   checkout,
+  confirmCheckout,
 }

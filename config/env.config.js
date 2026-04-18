@@ -39,6 +39,18 @@ export const isStripeConfigured = () => {
   )
 }
 
+export const isStripeCheckoutConfigured = () => {
+  return Boolean(env.clientUrl && env.stripeSecretKey)
+}
+
+export const isStripeSecretConfigured = () => {
+  return Boolean(env.stripeSecretKey)
+}
+
+export const isStripeWebhookConfigured = () => {
+  return Boolean(env.stripeSecretKey && env.stripeWebhookSecret)
+}
+
 export const isRedisConfigured = () => {
   if (env.disableRedis) {
     return false
